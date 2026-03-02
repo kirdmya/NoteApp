@@ -35,6 +35,8 @@ class NoteAppTests final : public QObject {
 private slots:
     void listNoteFilesReturnsOnlySupportedExtensions();
     void listNoteFilesReturnsEmptyForMissingDirectory();
+    void fileRepositoryReadsAndWritesSupportedFiles();
+    void fileRepositoryRejectsUnsupportedFiles();
     void workspaceServiceStartsWithDefaultWorkspace();
     void workspaceServicePersistsLastWorkspacePath();
     void appCreatesCoreServices();
@@ -66,6 +68,42 @@ void NoteAppTests::listNoteFilesReturnsEmptyForMissingDirectory()
     const QStringList files = repo.listNoteFiles(tempDir.filePath("missing"));
 
     QVERIFY(files.isEmpty());
+}
+
+void NoteAppTests::fileRepositoryReadsAndWritesSupportedFiles()
+{
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    const QString filePath = tempDir.filePath("note.txt");
+    createFile(filePath);
+
+    storage::FsFileRepository repo;
+    QString content;
+
+    QVERIFY(repo.canOpenInEditor(filePath));
+    QVERIFY(repo.readTextFile(filePath, content));
+    QCOMPARE(content, QString("test"));
+
+    QVERIFY(repo.writeTextFile(filePath, "updated"));
+    QVERIFY(repo.readTextFile(filePath, content));
+    QCOMPARE(content, QString("updated"));
+}
+
+void NoteAppTests::fileRepositoryRejectsUnsupportedFiles()
+{
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    const QString filePath = tempDir.filePath("image.png");
+    createFile(filePath);
+
+    storage::FsFileRepository repo;
+    QString content;
+
+    QVERIFY(!repo.canOpenInEditor(filePath));
+    QVERIFY(!repo.readTextFile(filePath, content));
+    QVERIFY(!repo.writeTextFile(filePath, "updated"));
 }
 
 void NoteAppTests::workspaceServiceStartsWithDefaultWorkspace()
@@ -104,6 +142,8 @@ void NoteAppTests::appCreatesCoreServices()
 
     QCOMPARE(app.settings().lastWorkspacePath(), QString());
     QCOMPARE(app.workspaceService().current().displayName, QString("No workspace"));
+    QVERIFY(app.canOpenFileInEditor("note.txt"));
+    QVERIFY(!app.canOpenFileInEditor("note.bin"));
 }
 
 void NoteAppTests::mainWindowBuildsExpectedUi()
