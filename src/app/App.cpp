@@ -1,9 +1,10 @@
 #include "App.h"
 
-#include "storage/FsFileRepository.h"
-#include "network/StubNetworkClient.h"
-#include "infra/settings/Settings.h"
 #include "core/usecases/WorkspaceService.h"
+#include "infra/settings/Settings.h"
+#include "network/StubNetworkClient.h"
+#include "storage/FsFileRepository.h"
+#include "storage/IFileRepository.h"
 
 namespace app {
 
@@ -18,5 +19,8 @@ App::~App() = default;
 
 core::IWorkspaceService& App::workspaceService() { return *workspaceService_; }
 infra::Settings& App::settings() { return *settings_; }
+bool App::canOpenFileInEditor(const QString& filePath) const { return fileRepo_->canOpenInEditor(filePath); }
+bool App::readTextFile(const QString& filePath, QString& content) const { return fileRepo_->readTextFile(filePath, content); }
+bool App::writeTextFile(const QString& filePath, const QString& content) { return fileRepo_->writeTextFile(filePath, content); }
 
 }

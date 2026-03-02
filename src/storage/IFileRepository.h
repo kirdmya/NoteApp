@@ -9,6 +9,9 @@ public:
     virtual ~IFileRepository() = default;
 
     virtual QStringList listNoteFiles(const QString& rootPath) = 0;
+    virtual bool canOpenInEditor(const QString& filePath) const = 0;
+    virtual bool readTextFile(const QString& filePath, QString& content) const = 0;
+    virtual bool writeTextFile(const QString& filePath, const QString& content) = 0;
 };
 
 }
