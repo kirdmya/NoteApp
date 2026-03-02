@@ -51,3 +51,9 @@ target_link_libraries(NoteApp PRIVATE Qt6::Widgets)
 
 # Чтобы пути include были удобнее
 target_include_directories(NoteApp PRIVATE src)
+option(NOTEAPP_BUILD_TESTS "Build NoteApp tests" ON)
+
+if (NOTEAPP_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(test)
+endif()

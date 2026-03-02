@@ -5,7 +5,6 @@ namespace storage {
 
 QStringList FsFileRepository::listNoteFiles(const QString& rootPath)
 {
-    // v0.1: заглушка, позже добавим рекурсивный обход + фильтры .md/.txt
     QDir dir(rootPath);
     if (!dir.exists()) return {};
 
