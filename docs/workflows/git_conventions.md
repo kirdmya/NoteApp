@@ -53,4 +53,10 @@ Deletion is prevented if workspace is active.
 
 feat: initial project setup
 
+#### Если поддержка чего-либо убирается - добавляй BREAKING CHANGE
+
+feat(core): saving files doesn't support Windows 7
+
+BREAKING CHANGE!: files' save doesn't support Windows 7 anymore
+
 
