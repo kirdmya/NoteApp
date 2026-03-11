@@ -2,7 +2,8 @@
 
 namespace infra {
 
-QString Settings::lastWorkspacePath() const { return lastWorkspacePath_; }
-void Settings::setLastWorkspacePath(const QString& path) { lastWorkspacePath_ = path; }
+
+QString Settings::lastWorkspacePath() const { return Settings::settingsPtr->value("Path").toString(); }
+void Settings::setLastWorkspacePath(const QString& path) { Settings::settingsPtr->setValue("Path", path); }
 
 }
