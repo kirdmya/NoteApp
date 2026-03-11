@@ -1,17 +1,20 @@
 #pragma once
 #include <QString>
+#include <QSettings>
+#include <QDir>
 
 namespace infra {
 
-class Settings final {
+class Settings final : public QDir {
 public:
     Settings() = default;
+    ~Settings() = default;
 
     QString lastWorkspacePath() const;
-    void setLastWorkspacePath(const QString& path);
+    void setPath(const QString& path);
 
 private:
-    QString lastWorkspacePath_;
+    QString lastPath = QDir::path();
 };
 
 }

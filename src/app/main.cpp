@@ -9,6 +9,8 @@ int main(int argc, char *argv[])
     a.setApplicationName(app::kAppName);
     a.setApplicationVersion(app::kAppVersion);
 
+
+
     app::App app;
 
     ui::MainWindow w(app);
