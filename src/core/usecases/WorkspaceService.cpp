@@ -14,7 +14,6 @@ WorkspaceService::WorkspaceService(storage::IFileRepository& repo,
 }
 
 Workspace WorkspaceService::current() const { return current_; }
-
 void WorkspaceService::setCurrent(const Workspace& ws)
 {
     current_ = ws;

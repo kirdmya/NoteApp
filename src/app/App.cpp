@@ -4,7 +4,10 @@
 #include "infra/settings/Settings.h"
 #include "network/StubNetworkClient.h"
 #include "storage/FsFileRepository.h"
+<<<<<<< HEAD
 #include "storage/IFileRepository.h" // нужно ли зедсь указывать IFileRepository когда он уже указан в FsFileRepository?
+=======
+>>>>>>> fcc799b (feat(infra): add auto-loading workspace path)
 
 namespace app {
 
