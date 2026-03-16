@@ -14,11 +14,10 @@ WorkspaceService::WorkspaceService(storage::IFileRepository& repo,
 }
 
 Workspace WorkspaceService::current() const { return current_; }
-
 void WorkspaceService::setCurrent(const Workspace& ws)
 {
     current_ = ws;
-    settings_.setPath(ws.rootPath);
+    settings_.setLastWorkspacePath(ws.rootPath);
     (void)repo_;
     (void)net_;
 }

@@ -2,7 +2,12 @@
 
 namespace infra {
 
-QString Settings::lastWorkspacePath() const { return lastPath; }
-void Settings::setPath(const QString& path) { lastPath = path; }
+Settings::Settings()
+    : settingsPtr(std::make_unique<QSettings>())
+{
+}
 
+QString Settings::lastWorkspacePath() const { return settingsPtr->value("Path").toString(); }
+void Settings::setLastWorkspacePath(const QString& path) { settingsPtr->setValue("Path", path); }
+QString Settings::settingsFilePath() const { return settingsPtr->fileName(); }
 }

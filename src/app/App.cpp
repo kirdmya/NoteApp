@@ -4,7 +4,6 @@
 #include "infra/settings/Settings.h"
 #include "network/StubNetworkClient.h"
 #include "storage/FsFileRepository.h"
-#include "storage/IFileRepository.h" // нужно ли зедсь указывать IFileRepository когда он уже указан в FsFileRepository?
 
 namespace app {
 

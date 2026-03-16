@@ -1,4 +1,6 @@
 #include <QApplication>
+#include <QDebug>
+#include "infra/settings/Settings.h"
 #include "ui/MainWindow.h"
 #include "app/App.h"
 #include "app/AppVersion.h"
@@ -9,7 +11,12 @@ int main(int argc, char *argv[])
     a.setApplicationName(app::kAppName);
     a.setApplicationVersion(app::kAppVersion);
 
+    QCoreApplication::setOrganizationName("O-O");
+    QCoreApplication::setApplicationName("O-Range");
 
+    infra::Settings settings;
+    settings.setLastWorkspacePath(settings.settingsFilePath());
+    qDebug() << settings.lastWorkspacePath();
 
     app::App app;
 
