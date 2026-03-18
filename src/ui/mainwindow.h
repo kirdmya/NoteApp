@@ -21,6 +21,7 @@ private:
     void setupUiRuntime();
     void setupActions();
     void connectSignals();
+    void restoreLastWorkspace();
     void openWorkspace();
     void loadWorkspace(const QString& rootPath);
     void openItem(const QModelIndex& index);

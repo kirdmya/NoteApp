@@ -47,6 +47,7 @@ MainWindow::MainWindow(app::App& app, QWidget* parent)
     connectSignals();
 
     statusBar()->showMessage("Ready");
+    restoreLastWorkspace();
 }
 
 MainWindow::~MainWindow() = default;
@@ -115,6 +116,16 @@ void MainWindow::connectSignals()
     connect(openWorkspace, &QAction::triggered, this, &MainWindow::openWorkspace);
 
     connect(tree_, &QTreeView::activated, this, &MainWindow::openItem);
+}
+
+void MainWindow::restoreLastWorkspace()
+{
+    const QString lastPath = app_.settings().lastWorkspacePath();
+    if (app_.settings().lastWorkspacePath().isEmpty()) {
+        return;
+    }
+
+    loadWorkspace(lastPath);
 }
 
 void MainWindow::openWorkspace()
