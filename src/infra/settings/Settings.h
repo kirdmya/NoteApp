@@ -13,7 +13,7 @@ public:
     QString lastWorkspacePath() const;
     void setLastWorkspacePath(const QString& path);
 
-    std::unique_ptr<QSettings> settingsPtr;
+    QSettings settingsPtr;
 
 };
 }
