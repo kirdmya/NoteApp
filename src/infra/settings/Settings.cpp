@@ -1,7 +1,6 @@
 #include "Settings.h"
 
 namespace infra {
-
 Settings::Settings()
     : settingsPtr(std::make_unique<QSettings>())
 {
