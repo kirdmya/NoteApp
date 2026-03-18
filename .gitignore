@@ -81,6 +81,7 @@ cmake_install.cmake
 *.opensdf
 *.vcxproj
 *vcxproj.*
+.vscode
 
 # ----------------------------------------------------------------------------
 # MinGW

@@ -15,6 +15,10 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("O-Range");
 
     infra::Settings settings;
+
+    settings.setLastWorkspacePath(settings.settingsFilePath());
+    qDebug() << settings.lastWorkspacePath();
+
     app::App app;
     if (settings.lastWorkspacePath().isEmpty()) {
         app.workspaceService().setCurrent(app.workspaceService().current());

@@ -1,19 +1,21 @@
 #pragma once
-#include <QDebug>
-#include <QString>
+
+#include <memory>
 #include <QSettings>
+#include <QString>
 
 namespace infra {
 
 class Settings final {
 public:
-    Settings() = default;
+    Settings();
     ~Settings() = default;
 
     QString lastWorkspacePath() const;
     void setLastWorkspacePath(const QString& path);
+    QString settingsFilePath() const;
 
-    QSettings settingsPtr;
-
+private:
+    std::unique_ptr<QSettings> settingsPtr;
 };
 }
