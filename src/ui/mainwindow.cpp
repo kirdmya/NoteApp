@@ -119,7 +119,9 @@ void MainWindow::connectSignals()
 
     connect(tree_, &QTreeView::activated, this, &MainWindow::openItem);
 
-    // connect(tab_-> ) { (void)closeAtIndex()}
+    connect(tabs_, &QTabWidget::tabCloseRequested, this, [this](int index) {
+        (void)closeTabAt(index);
+    });
 }
 
 void MainWindow::restoreLastWorkspace()
@@ -190,13 +192,6 @@ void MainWindow::openItem(const QModelIndex& index)
     openNoteFile(info.filePath());
 }
 
-void MainWindow::openWelcomeTab()
-{
-    if (tabs_->count() == 0){
-         tabs_->addTab(new PlaceholderWidget("Open a workspace to browse notes", tabs_), "Welcome");
-    }
-}
-
 void MainWindow::openNoteFile(const QString& filePath)
 {
     for (int i = 0; i < tabs_->count(); ++i) {
@@ -223,19 +218,81 @@ void MainWindow::openNoteFile(const QString& filePath)
     editor->document()->setModified(false);
     editor->setProperty("filePath", filePath);
 
+    connect(editor->document(), &QTextDocument::modificationChanged, this, [this, editor](bool) {
+        updateEditorTabTitle(editor);
+    });
+
     const QFileInfo info(filePath);
     const int tabIndex = tabs_->addTab(editor, info.fileName());
     tabs_->setTabToolTip(tabIndex, QDir::toNativeSeparators(filePath));
     tabs_->setCurrentIndex(tabIndex);
 
-    auto* button_ = new QPushButton("X", tabs_->tabBar());
-    tabs_->tabBar()->setTabButton(tabIndex, QTabBar::RightSide, button_);
-    // button_->connect(this, button_->is)
+    // auto* button_ = new QPushButton("X", tabs_->tabBar());
+    // tabs_->tabBar()->setTabButton(tabIndex, QTabBar::RightSide, button_);
+    // // button_->connect(this, button_->is)
 
     statusBar()->showMessage(QString("Opened: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
 }
 
+bool MainWindow::saveEditor(QPlainTextEdit* editor)
+{
+    if (editor == nullptr) return false;
 
+    const QString filePath = editor->property("filePath").toString();
+    if (!app_.canOpenFileInEditor(filePath)) return false;
+    if (!app_.writeTextFile(filePath, editor->toPlainText())) return false;
+
+    editor->document()->setModified(false);
+    updateEditorTabTitle(editor);
+    return true;
+}
+
+bool MainWindow::maybeSaveEditor(QPlainTextEdit* editor)
+{
+    if (editor == nullptr || !editor->document()->isModified()) return true;
+
+    const QString filePath = editor->property("filePath").toString();
+    const QString fileName = QFileInfo(filePath).fileName();
+
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Warning);
+    box.setWindowTitle("Unsaved changes");
+    box.setText(QString("File \"%1\" has unsaved changes.").arg(fileName));
+    box.setInformativeText("Save before closing?");
+    box.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+    box.setDefaultButton(QMessageBox::Save);
+
+    const int answer = box.exec();
+    if (answer == QMessageBox::Save) return saveEditor(editor);
+    if (answer == QMessageBox::Discard) return true;
+    return false;
+}
+
+bool MainWindow::closeTabAt(int index)
+{
+    if (index < 0 || index >= tabs_->count()) return false;
+
+    QWidget* page = tabs_->widget(index);
+    auto* editor = qobject_cast<QPlainTextEdit*>(page);
+
+    if (editor != nullptr && !maybeSaveEditor(editor)) return false;
+
+    tabs_->removeTab(index);
+    page->deleteLater();
+    openWelcomeTab();
+    return true;
+}
+
+void MainWindow::updateEditorTabTitle(QPlainTextEdit* editor)
+{
+    const int index = tabs_->indexOf(editor);
+    if (index < 0) return;
+
+    const QString filePath = editor->property("filePath").toString();
+    const QString fileName = QFileInfo(filePath).fileName();
+    const QString prefix = editor->document()->isModified() ? "*" : "";
+    tabs_->setTabText(index, prefix + fileName);
+}
 
 void MainWindow::saveCurrentNote()
 {
@@ -260,5 +317,22 @@ void MainWindow::saveCurrentNote()
     statusBar()->showMessage(QString("Saved: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
 }
 
+void MainWindow::openWelcomeTab()
+{
+    if (tabs_->count() == 0) {
+        tabs_->addTab(new PlaceholderWidget("Open a workspace to browse notes", tabs_), "Welcome");
+    }
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    for (int i = tabs_->count() - 1; i >= 0; --i) {
+        if (!closeTabAt(i)) {
+            event->ignore();
+            return;
+        }
+    }
+    event->accept();
+}
 
 }
