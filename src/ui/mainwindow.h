@@ -23,10 +23,13 @@ private:
     void connectSignals();
     void restoreLastWorkspace();
     void openWorkspace();
+    void openWelcomeTab();
+    void saveCurrentNote();
     void loadWorkspace(const QString& rootPath);
     void openItem(const QModelIndex& index);
     void openNoteFile(const QString& filePath);
-    void saveCurrentNote();
+
+
 
     app::App& app_;
 

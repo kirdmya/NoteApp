@@ -13,6 +13,7 @@
 #include <QTabWidget>
 #include <QTextDocument>
 #include <QTreeView>
+#include <qpushbutton.h>
 
 #include "core/domain/Workspace.h"
 #include "core/usecases/IWorkspaceService.h"
@@ -65,7 +66,8 @@ void MainWindow::setupUiRuntime()
     fileModel_->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
 
     tabs_ = new QTabWidget(splitter);
-    tabs_->addTab(new PlaceholderWidget("Open a workspace to browse notes", tabs_), "Welcome");
+    tabs_->setTabsClosable(true);
+    openWelcomeTab();
 
     splitter->setStretchFactor(0, 1);
     splitter->setStretchFactor(1, 3);
@@ -116,6 +118,8 @@ void MainWindow::connectSignals()
     connect(openWorkspace, &QAction::triggered, this, &MainWindow::openWorkspace);
 
     connect(tree_, &QTreeView::activated, this, &MainWindow::openItem);
+
+    // connect(tab_-> ) { (void)closeAtIndex()}
 }
 
 void MainWindow::restoreLastWorkspace()
@@ -186,6 +190,13 @@ void MainWindow::openItem(const QModelIndex& index)
     openNoteFile(info.filePath());
 }
 
+void MainWindow::openWelcomeTab()
+{
+    if (tabs_->count() == 0){
+         tabs_->addTab(new PlaceholderWidget("Open a workspace to browse notes", tabs_), "Welcome");
+    }
+}
+
 void MainWindow::openNoteFile(const QString& filePath)
 {
     for (int i = 0; i < tabs_->count(); ++i) {
@@ -217,8 +228,14 @@ void MainWindow::openNoteFile(const QString& filePath)
     tabs_->setTabToolTip(tabIndex, QDir::toNativeSeparators(filePath));
     tabs_->setCurrentIndex(tabIndex);
 
+    auto* button_ = new QPushButton("X", tabs_->tabBar());
+    tabs_->tabBar()->setTabButton(tabIndex, QTabBar::RightSide, button_);
+    // button_->connect(this, button_->is)
+
     statusBar()->showMessage(QString("Opened: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
 }
+
+
 
 void MainWindow::saveCurrentNote()
 {
@@ -242,5 +259,6 @@ void MainWindow::saveCurrentNote()
     editor->document()->setModified(false);
     statusBar()->showMessage(QString("Saved: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
 }
+
 
 }
