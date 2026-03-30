@@ -61,6 +61,7 @@ void MainWindow::setupUiRuntime()
     tree_->setHeaderHidden(true);
     tree_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     tree_->setSortingEnabled(true);
+    tree_->setMinimumWidth(57);
 
     fileModel_ = new QFileSystemModel(this);
     fileModel_->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
@@ -226,10 +227,6 @@ void MainWindow::openNoteFile(const QString& filePath)
     const int tabIndex = tabs_->addTab(editor, info.fileName());
     tabs_->setTabToolTip(tabIndex, QDir::toNativeSeparators(filePath));
     tabs_->setCurrentIndex(tabIndex);
-
-    // auto* button_ = new QPushButton("X", tabs_->tabBar());
-    // tabs_->tabBar()->setTabButton(tabIndex, QTabBar::RightSide, button_);
-    // // button_->connect(this, button_->is)
 
     statusBar()->showMessage(QString("Opened: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
 }
