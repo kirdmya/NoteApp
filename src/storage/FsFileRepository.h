@@ -9,6 +9,7 @@ public:
     bool canOpenInEditor(const QString& filePath) const override;
     bool readTextFile(const QString& filePath, QString& content) const override;
     bool writeTextFile(const QString& filePath, const QString& content) override;
+    void renameNote() override;
 };
 
 }

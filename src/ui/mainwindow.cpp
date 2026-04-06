@@ -26,6 +26,7 @@
 #include "ui/actions/ActionIds.h"
 #include "app/App.h"
 #include "app/AppVersion.h"
+#include "storage/FsFileRepository.h"
 
 namespace {
 
@@ -166,7 +167,7 @@ void MainWindow::connectSignals()
     auto* renameNote = findChild<QAction*>(ui::actions::kRenameNote);
     noteMenu->addAction(renameNote);
 
-    connect(renameNote, &QAction::triggered, this, &MainWindow::renameNote);
+    connect(renameNote, &QAction::triggered, ,  &storage::FsFileRepository::renameNote);
 
 }
 
@@ -357,15 +358,6 @@ void MainWindow::saveCurrentNote()
 
     editor->document()->setModified(false);
     statusBar()->showMessage(QString("Saved: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
-}
-
-void MainWindow::renameNote() {
-    const QModelIndex index = tree_->currentIndex();
-
-    if (index.isValid()) {
-        tree_->setCurrentIndex(index);
-        tree_->edit(index);
-    }
 }
 
 void MainWindow::openWelcomeTab()
