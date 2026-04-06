@@ -12,6 +12,7 @@ public:
     virtual bool canOpenInEditor(const QString& filePath) const = 0;
     virtual bool readTextFile(const QString& filePath, QString& content) const = 0;
     virtual bool writeTextFile(const QString& filePath, const QString& content) = 0;
+
 };
 
 }

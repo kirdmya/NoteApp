@@ -1,7 +1,7 @@
 #pragma once
 
 namespace ui::actions {
-inline constexpr const char* kNewNote = "action.newNote";
+inline constexpr const char* kRenameNote = "action.renameNote";
 inline constexpr const char* kOpenWorkspace = "action.openWorkspace";
 inline constexpr const char* kSave = "action.save";
 inline constexpr const char* kExit = "action.exit";

@@ -27,6 +27,7 @@ private:
     void openWorkspace();
     void openWelcomeTab();
     void saveCurrentNote();
+    void renameNote();
 
     void loadWorkspace(const QString& rootPath);
     void openItem(const QModelIndex& index);

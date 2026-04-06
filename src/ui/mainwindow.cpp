@@ -2,18 +2,22 @@
 
 #include <QAction>
 #include <QDir>
+#include <QDebug>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemModel>
+#include <QFlags>
+#include <QInputDialog>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPlainTextEdit>
 #include <QSplitter>
+#include <QStandardItemModel> // Изначально предпологалось использование QStandardItemModel вместо QAbstractItemModel?
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QTextDocument>
 #include <QTreeView>
-#include <qpushbutton.h>
 
 #include "core/domain/Workspace.h"
 #include "core/usecases/IWorkspaceService.h"
@@ -24,6 +28,30 @@
 #include "app/AppVersion.h"
 
 namespace {
+
+class myItemModel : public QFileSystemModel {
+    //Q_OBJECT
+public:
+    explicit myItemModel(QObject *parent = nullptr) : QFileSystemModel(parent) {};
+
+    Qt::ItemFlags flags(const QModelIndex &index) const override {
+        if (!index.isValid()) {
+            return Qt::NoItemFlags;
+        }
+
+        Qt::ItemFlags oldFlags = QAbstractItemModel::flags(index);
+        return oldFlags | Qt::ItemIsEditable;
+    }
+
+    // QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override {
+    //     if (index.isValid() && role == Qt::DisplayRole && index.column() == 0) {
+    //         QString valueStr = QFileSystemModel::data(index, role).toString();
+    //         QFileInfo* fileInfo = new QFileInfo(valueStr);
+    //         return valueStr.remove("." + fileInfo->suffix());
+    //     }
+    //     return QFileSystemModel::data(index, role);
+    // }
+};
 
 QString workspaceDisplayName(const QString& rootPath)
 {
@@ -59,12 +87,17 @@ void MainWindow::setupUiRuntime()
 
     tree_ = new QTreeView(splitter);
     tree_->setHeaderHidden(true);
-    tree_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    tree_->setEditTriggers(QAbstractItemView::SelectedClicked);
     tree_->setSortingEnabled(true);
     tree_->setMinimumWidth(57);
+    tree_->setContextMenuPolicy(Qt::ActionsContextMenu);
 
-    fileModel_ = new QFileSystemModel(this);
+    const QStringList filters = { "*.txt", "*.md" };
+    fileModel_ = new myItemModel(this);
     fileModel_->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
+    fileModel_->setNameFilters(filters);
+    fileModel_->setNameFilterDisables(false);
+    tree_->setModel(fileModel_);
 
     tabs_ = new QTabWidget(splitter);
     tabs_->setTabsClosable(true);
@@ -86,6 +119,9 @@ void MainWindow::setupActions()
 
     auto* save = new QAction("Save", this);
     save->setObjectName(ui::actions::kSave);
+
+    auto* renameNote = new QAction("Rename", this);
+    renameNote->setObjectName(ui::actions::kRenameNote);
 
     auto* exit = new QAction("Exit", this);
     exit->setObjectName(ui::actions::kExit);
@@ -120,9 +156,18 @@ void MainWindow::connectSignals()
 
     connect(tree_, &QTreeView::activated, this, &MainWindow::openItem);
 
-    connect(tabs_, &QTabWidget::tabCloseRequested, this, [this](int index) {
+    connect(tabs_, &QTabWidget::tabCloseRequested, this, [this](const int index) {
         (void)closeTabAt(index);
     });
+
+    QMenu* noteMenu = new QMenu(tree_);
+    tree_->addAction(noteMenu->menuAction());
+
+    auto* renameNote = findChild<QAction*>(ui::actions::kRenameNote);
+    noteMenu->addAction(renameNote);
+
+    connect(renameNote, &QAction::triggered, this, &MainWindow::renameNote);
+
 }
 
 void MainWindow::restoreLastWorkspace()
@@ -312,6 +357,15 @@ void MainWindow::saveCurrentNote()
 
     editor->document()->setModified(false);
     statusBar()->showMessage(QString("Saved: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
+}
+
+void MainWindow::renameNote() {
+    const QModelIndex index = tree_->currentIndex();
+
+    if (index.isValid()) {
+        tree_->setCurrentIndex(index);
+        tree_->edit(index);
+    }
 }
 
 void MainWindow::openWelcomeTab()
