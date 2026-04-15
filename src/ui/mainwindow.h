@@ -5,6 +5,7 @@
 namespace app { class App; }
 
 class QFileSystemModel;
+class QLabel;
 class QModelIndex;
 class QTreeView;
 class QTabWidget;
@@ -32,6 +33,7 @@ private:
     void openItem(const QModelIndex& index);
     void openNoteFile(const QString& filePath);
     void updateEditorTabTitle(QPlainTextEdit* editor);
+    void updateTextCursor(QPlainTextEdit* editor);
 
     bool closeTabAt(int index);
     bool maybeSaveEditor(QPlainTextEdit* editor);
@@ -41,6 +43,7 @@ private:
     QFileSystemModel* fileModel_ = nullptr;
     QTreeView*  tree_ = nullptr;
     QTabWidget* tabs_ = nullptr;
+    QLabel* textInfo_ = nullptr;
 };
 
 }

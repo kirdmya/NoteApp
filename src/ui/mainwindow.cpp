@@ -1,10 +1,12 @@
 #include "MainWindow.h"
 
 #include <QAction>
+#include <QDebug>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemModel>
+#include <QLabel>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPlainTextEdit>
@@ -13,7 +15,6 @@
 #include <QTabWidget>
 #include <QTextDocument>
 #include <QTreeView>
-#include <qpushbutton.h>
 
 #include "core/domain/Workspace.h"
 #include "core/usecases/IWorkspaceService.h"
@@ -72,6 +73,10 @@ void MainWindow::setupUiRuntime()
 
     splitter->setStretchFactor(0, 1);
     splitter->setStretchFactor(1, 3);
+
+    textInfo_ = new QLabel("column: 1, row: 1", statusBar()->window());
+    statusBar()->addPermanentWidget(textInfo_);
+    textInfo_->setVisible(false);
 
     setCentralWidget(splitter);
 }
@@ -219,14 +224,23 @@ void MainWindow::openNoteFile(const QString& filePath)
     editor->document()->setModified(false);
     editor->setProperty("filePath", filePath);
 
+
     connect(editor->document(), &QTextDocument::modificationChanged, this, [this, editor](bool) {
         updateEditorTabTitle(editor);
     });
+
 
     const QFileInfo info(filePath);
     const int tabIndex = tabs_->addTab(editor, info.fileName());
     tabs_->setTabToolTip(tabIndex, QDir::toNativeSeparators(filePath));
     tabs_->setCurrentIndex(tabIndex);
+
+    textInfo_->setText("column: 1, row: 1");
+    textInfo_->setVisible(true);
+
+    connect(editor, &QPlainTextEdit::cursorPositionChanged, this, [this, editor]() {
+        updateTextCursor(editor);
+    });
 
     statusBar()->showMessage(QString("Opened: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
 }
@@ -263,6 +277,13 @@ bool MainWindow::maybeSaveEditor(QPlainTextEdit* editor)
     if (answer == QMessageBox::Save) return saveEditor(editor);
     if (answer == QMessageBox::Discard) return true;
     return false;
+}
+
+void MainWindow::updateTextCursor(QPlainTextEdit* editor) {
+    if (editor->textCursor().blockNumber() >= 0 && editor->textCursor().columnNumber() >= 0)
+        textInfo_->setText(QString("column: %1, row: %2").arg(editor->textCursor().blockNumber() + 1)
+                                                         .arg(editor->textCursor().columnNumber() + 1));
+    return;
 }
 
 bool MainWindow::closeTabAt(int index)
@@ -304,7 +325,6 @@ void MainWindow::saveCurrentNote()
         statusBar()->showMessage("The current tab is not a supported note file", 3000);
         return;
     }
-
     if (!app_.writeTextFile(filePath, editor->toPlainText())) {
         statusBar()->showMessage("Unable to save the full file content", 4000);
         return;
@@ -318,6 +338,7 @@ void MainWindow::openWelcomeTab()
 {
     if (tabs_->count() == 0) {
         tabs_->addTab(new PlaceholderWidget("Open a workspace to browse notes", tabs_), "Welcome");
+        textInfo_->hide();
     }
 }
 
