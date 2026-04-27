@@ -280,6 +280,11 @@ bool MainWindow::maybeSaveEditor(QPlainTextEdit* editor)
 }
 
 void MainWindow::updateTextCursor(QPlainTextEdit* editor) {
+    if (!editor) {
+        textInfo_->setText("column: 1, row: 1");
+        return;
+    }
+
     if (editor->textCursor().blockNumber() >= 0 && editor->textCursor().columnNumber() >= 0)
         textInfo_->setText(QString("column: %1, row: %2").arg(editor->textCursor().blockNumber() + 1)
                                                          .arg(editor->textCursor().columnNumber() + 1));
@@ -298,6 +303,7 @@ bool MainWindow::closeTabAt(int index)
     tabs_->removeTab(index);
     page->deleteLater();
     openWelcomeTab();
+    updateTextCursor(editor);
     return true;
 }
 
@@ -338,7 +344,7 @@ void MainWindow::openWelcomeTab()
 {
     if (tabs_->count() == 0) {
         tabs_->addTab(new PlaceholderWidget("Open a workspace to browse notes", tabs_), "Welcome");
-        textInfo_->hide();
+        if (textInfo_) textInfo_->hide();
     }
 }
 
