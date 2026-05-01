@@ -76,6 +76,11 @@ void MainWindow::setupUiRuntime()
 
     textInfo_ = new QLabel("column: 1, row: 1", statusBar()->window());
     statusBar()->addPermanentWidget(textInfo_);
+    statusBar()->setSizeGripEnabled(false);
+    textInfo_->setFrameStyle(QFrame::NoFrame);
+    textInfo_->setStyleSheet("border: 3px solid #FF8F2E; border-radius: 6px; "
+                             "background-color: #FFB573; color: #472100; "
+                             "margin: 0 2px 0 0; "); // 2px from right side
     textInfo_->setVisible(false);
 
     setCentralWidget(splitter);
