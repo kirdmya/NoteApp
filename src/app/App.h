@@ -17,6 +17,8 @@ public:
 
     core::IWorkspaceService& workspaceService();
     infra::Settings& settings();
+    storage::IFileRepository& fileRepository();
+    bool deleteFile(const QString& filePath);
     bool canOpenFileInEditor(const QString& filePath) const;
     bool readTextFile(const QString& filePath, QString& content) const;
     bool writeTextFile(const QString& filePath, const QString& content);

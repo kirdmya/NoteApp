@@ -52,4 +52,13 @@ bool FsFileRepository::writeTextFile(const QString& filePath, const QString& con
     return file.write(bytes) == bytes.size();
 }
 
+bool FsFileRepository::deleteFile(const QString& filePath) {
+    if (QFile::exists(filePath)) {
+        QFile::remove(filePath);
+        return true;
+    }
+
+    return false;
+}
+
 }

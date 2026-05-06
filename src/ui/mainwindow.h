@@ -30,6 +30,7 @@ private:
 
     void loadWorkspace(const QString& rootPath);
     void openItem(const QModelIndex& index);
+    bool maybeDeleteFile();
     void openNoteFile(const QString& filePath);
     void updateEditorTabTitle(QPlainTextEdit* editor);
 
