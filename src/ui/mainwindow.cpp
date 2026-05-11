@@ -133,6 +133,12 @@ void MainWindow::connectSignals()
     connect(tabs_, &QTabWidget::tabCloseRequested, this, [this](int index) {
         (void)closeTabAt(index);
     });
+
+    connect(tabs_, &QTabWidget::currentChanged, this, [this](int index) {
+        QWidget* editor = tabs_->widget(index);
+        (void)updateTextCursor(qobject_cast<QPlainTextEdit*>(editor)); // странно, не думал что qwidget можно
+                                                                      // превратить в qplaintextedit
+    });
 }
 
 void MainWindow::restoreLastWorkspace()
@@ -285,7 +291,7 @@ bool MainWindow::maybeSaveEditor(QPlainTextEdit* editor)
 }
 
 void MainWindow::updateTextCursor(QPlainTextEdit* editor) {
-    if (!editor) {
+    if (editor == nullptr || editor == 0) {
         textInfo_->setText("column: 1, row: 1");
         return;
     }
@@ -308,7 +314,7 @@ bool MainWindow::closeTabAt(int index)
     tabs_->removeTab(index);
     page->deleteLater();
     openWelcomeTab();
-    updateTextCursor(editor);
+    updateTextCursor(qobject_cast<QPlainTextEdit*>(tabs_->currentWidget()));
     return true;
 }
 
@@ -349,7 +355,7 @@ void MainWindow::openWelcomeTab()
 {
     if (tabs_->count() == 0) {
         tabs_->addTab(new PlaceholderWidget("Open a workspace to browse notes", tabs_), "Welcome");
-        if (textInfo_) textInfo_->hide();
+        //if (textInfo_) textInfo_->hide();
     }
 }
 
