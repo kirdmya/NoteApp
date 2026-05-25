@@ -63,6 +63,7 @@ void MainWindow::setupUiRuntime()
     tree_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     tree_->setSortingEnabled(true);
     tree_->setMinimumWidth(57);
+    tree_->setContextMenuPolicy(Qt::ActionsContextMenu);
 
     fileModel_ = new QFileSystemModel(this);
     fileModel_->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
@@ -77,6 +78,7 @@ void MainWindow::setupUiRuntime()
     textInfo_ = new QLabel("column: 1, row: 1", statusBar()->window());
     statusBar()->addPermanentWidget(textInfo_);
     statusBar()->setSizeGripEnabled(false);
+    textInfo_->setMouseTracking(true);
     textInfo_->setFrameStyle(QFrame::NoFrame);
     textInfo_->setStyleSheet("border: 3px solid #FF8F2E; border-radius: 6px; "
                              "background-color: #FFB573; color: #472100; "
@@ -109,6 +111,9 @@ void MainWindow::setupActions()
     auto* about = new QAction("About", this);
     about->setObjectName(ui::actions::kAbout);
     helpMenu->addAction(about);
+
+    auto* deleteNote = new QAction("Delete", this);
+    deleteNote->setObjectName(ui::actions::kDeleteNote);
 }
 
 void MainWindow::connectSignals()
@@ -136,8 +141,24 @@ void MainWindow::connectSignals()
 
     connect(tabs_, &QTabWidget::currentChanged, this, [this](int index) {
         QWidget* editor = tabs_->widget(index);
-        (void)updateTextCursor(qobject_cast<QPlainTextEdit*>(editor)); // странно, не думал что qwidget можно
-                                                                      // превратить в qplaintextedit
+        (void)updateTextCursor(qobject_cast<QPlainTextEdit*>(editor));
+        }); // странно, не думал что qwidget можно
+            // превратить в qplaintextedit
+
+    QMenu* noteMenu = new QMenu(tree_);
+    tree_->addAction(noteMenu->menuAction());
+
+    auto* deleteNote = findChild<QAction*>(ui::actions::kDeleteNote);
+    noteMenu->addAction(deleteNote);
+
+    connect(deleteNote, &QAction::triggered, this, [this](int index) {
+        if (tree_->selectionModel()->hasSelection() && maybeDeleteFile()) {
+            closeTabAt(index);
+            app_.deleteFile(fileModel_->filePath(tree_->currentIndex()));
+        }
+        else {
+            statusBar()->showMessage("Any note isn't selected", 4000);
+        }
     });
 }
 
@@ -207,6 +228,23 @@ void MainWindow::openItem(const QModelIndex& index)
     }
 
     openNoteFile(info.filePath());
+}
+
+bool MainWindow::maybeDeleteFile()
+{
+    const QString fileName = fileModel_->fileName(tree_->currentIndex());
+
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Warning);
+    box.setWindowTitle("Deleting File");
+    box.setText(QString("File \"%1\" can be deleted").arg(fileName));
+    box.setInformativeText("Are you sure you want to delete it?");
+    box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    box.setDefaultButton(QMessageBox::No);
+
+    const int answer = box.exec();
+    if (answer == QMessageBox::Yes) return true;
+    return false;
 }
 
 void MainWindow::openNoteFile(const QString& filePath)
