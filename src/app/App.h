@@ -17,13 +17,19 @@ public:
 
     core::IWorkspaceService& workspaceService();
     infra::Settings& settings();
-    bool deleteFile(const QString& filePath);
     bool canOpenFileInEditor(const QString& filePath) const;
     bool readTextFile(const QString& filePath, QString& content) const;
     bool writeTextFile(const QString& filePath, const QString& content);
-    bool renameNote(const QString& filePath,
-                    const QString& newFileName,
-                    QString& renamedFilePath);
+    bool createNoteFile(const QString& directoryPath,
+                        const QString& fileName,
+                        QString& createdFilePath);
+    bool createFolder(const QString& directoryPath,
+                      const QString& folderName,
+                      QString& createdFolderPath);
+    bool moveToTrash(const QString& path);
+    bool renamePath(const QString& path,
+                    const QString& newName,
+                    QString& renamedPath);
 
 private:
     std::unique_ptr<storage::IFileRepository> fileRepo_;

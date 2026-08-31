@@ -18,15 +18,27 @@ App::~App() = default;
 
 core::IWorkspaceService& App::workspaceService() { return *workspaceService_; }
 infra::Settings& App::settings() { return *settings_; }
-bool App::deleteFile(const QString& filePath) { return fileRepo_->deleteFile(filePath); }
 bool App::canOpenFileInEditor(const QString& filePath) const { return fileRepo_->canOpenInEditor(filePath); }
 bool App::readTextFile(const QString& filePath, QString& content) const { return fileRepo_->readTextFile(filePath, content); }
 bool App::writeTextFile(const QString& filePath, const QString& content) { return fileRepo_->writeTextFile(filePath, content); }
-bool App::renameNote(const QString& filePath,
-                     const QString& newFileName,
-                     QString& renamedFilePath)
+bool App::createNoteFile(const QString& directoryPath,
+                         const QString& fileName,
+                         QString& createdFilePath)
 {
-    return fileRepo_->renameNote(filePath, newFileName, renamedFilePath);
+    return fileRepo_->createFile(directoryPath, fileName, createdFilePath);
+}
+bool App::createFolder(const QString& directoryPath,
+                       const QString& folderName,
+                       QString& createdFolderPath)
+{
+    return fileRepo_->createFolder(directoryPath, folderName, createdFolderPath);
+}
+bool App::moveToTrash(const QString& path) { return fileRepo_->moveToTrash(path); }
+bool App::renamePath(const QString& path,
+                     const QString& newName,
+                     QString& renamedPath)
+{
+    return fileRepo_->renamePath(path, newName, renamedPath);
 }
 
 }

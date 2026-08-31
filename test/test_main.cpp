@@ -42,9 +42,12 @@ private slots:
     void listNoteFilesReturnsEmptyForMissingDirectory();
     void fileRepositoryReadsAndWritesSupportedFiles();
     void fileRepositoryRejectsUnsupportedFiles();
-    void fileRepositoryDeletesNote();
+    void fileRepositoryCreatesFileAndFolder();
+    void fileRepositoryRejectsDuplicateEntries();
+    void fileRepositoryMovesNoteToTrash();
     void fileRepositoryRejectsInvalidDelete();
     void fileRepositoryRenamesNote();
+    void fileRepositoryRenamesFolder();
     void fileRepositoryRejectsInvalidRename();
     void workspaceServiceStartsWithDefaultWorkspace();
     void workspaceServicePersistsLastWorkspacePath();
@@ -131,7 +134,37 @@ void NoteAppTests::fileRepositoryRejectsUnsupportedFiles()
     QVERIFY(!repo.writeTextFile(filePath, "updated"));
 }
 
-void NoteAppTests::fileRepositoryDeletesNote()
+void NoteAppTests::fileRepositoryCreatesFileAndFolder()
+{
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    storage::FsFileRepository repo;
+    QString filePath;
+    QString folderPath;
+
+    QVERIFY(repo.createFile(tempDir.path(), "note.md", filePath));
+    QVERIFY(QFileInfo(filePath).isFile());
+    QVERIFY(repo.createFolder(tempDir.path(), "Nested", folderPath));
+    QVERIFY(QFileInfo(folderPath).isDir());
+}
+
+void NoteAppTests::fileRepositoryRejectsDuplicateEntries()
+{
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    storage::FsFileRepository repo;
+    QString createdPath;
+
+    QVERIFY(repo.createFile(tempDir.path(), "note.txt", createdPath));
+    QVERIFY(!repo.createFile(tempDir.path(), "note.txt", createdPath));
+    QVERIFY(!repo.createFile(tempDir.path(), "image.png", createdPath));
+    QVERIFY(repo.createFolder(tempDir.path(), "Folder", createdPath));
+    QVERIFY(!repo.createFolder(tempDir.path(), "Folder", createdPath));
+}
+
+void NoteAppTests::fileRepositoryMovesNoteToTrash()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -140,7 +173,9 @@ void NoteAppTests::fileRepositoryDeletesNote()
     createFile(filePath);
 
     storage::FsFileRepository repo;
-    QVERIFY(repo.deleteFile(filePath));
+    if (!repo.moveToTrash(filePath)) {
+        QSKIP("The OS Recycle Bin is unavailable for the temporary directory");
+    }
     QVERIFY(!QFileInfo::exists(filePath));
 }
 
@@ -153,8 +188,7 @@ void NoteAppTests::fileRepositoryRejectsInvalidDelete()
     createFile(unsupportedPath);
 
     storage::FsFileRepository repo;
-    QVERIFY(!repo.deleteFile(unsupportedPath));
-    QVERIFY(!repo.deleteFile(tempDir.filePath("missing.md")));
+    QVERIFY(!repo.moveToTrash(tempDir.filePath("missing.md")));
     QVERIFY(QFileInfo::exists(unsupportedPath));
 }
 
@@ -169,10 +203,27 @@ void NoteAppTests::fileRepositoryRenamesNote()
     storage::FsFileRepository repo;
     QString renamedPath;
 
-    QVERIFY(repo.renameNote(sourcePath, "after.md", renamedPath));
+    QVERIFY(repo.renamePath(sourcePath, "after.md", renamedPath));
     QCOMPARE(renamedPath, tempDir.filePath("after.md"));
     QVERIFY(!QFileInfo::exists(sourcePath));
     QVERIFY(QFileInfo::exists(renamedPath));
+}
+
+void NoteAppTests::fileRepositoryRenamesFolder()
+{
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    const QString sourcePath = tempDir.filePath("Before");
+    QVERIFY(QDir().mkdir(sourcePath));
+
+    storage::FsFileRepository repo;
+    QString renamedPath;
+
+    QVERIFY(repo.renamePath(sourcePath, "After", renamedPath));
+    QCOMPARE(renamedPath, tempDir.filePath("After"));
+    QVERIFY(!QFileInfo::exists(sourcePath));
+    QVERIFY(QFileInfo(renamedPath).isDir());
 }
 
 void NoteAppTests::fileRepositoryRejectsInvalidRename()
@@ -186,8 +237,8 @@ void NoteAppTests::fileRepositoryRejectsInvalidRename()
     storage::FsFileRepository repo;
     QString renamedPath;
 
-    QVERIFY(!repo.renameNote(sourcePath, "../outside.md", renamedPath));
-    QVERIFY(!repo.renameNote(sourcePath, "image.png", renamedPath));
+    QVERIFY(!repo.renamePath(sourcePath, "../outside.md", renamedPath));
+    QVERIFY(!repo.renamePath(sourcePath, "image.png", renamedPath));
     QVERIFY(QFileInfo::exists(sourcePath));
 }
 
@@ -250,6 +301,12 @@ void NoteAppTests::mainWindowBuildsExpectedUi()
     QVERIFY(window.findChild<QAction*>(ui::actions::kSave) != nullptr);
     QVERIFY(window.findChild<QAction*>(ui::actions::kExit) != nullptr);
     QVERIFY(window.findChild<QAction*>(ui::actions::kAbout) != nullptr);
+    QVERIFY(window.findChild<QAction*>(ui::actions::kRenameNote) != nullptr);
+    QVERIFY(window.findChild<QAction*>(ui::actions::kDeleteNote) != nullptr);
+    QVERIFY(window.findChild<QAction*>(ui::actions::kNewFile) != nullptr);
+    QVERIFY(window.findChild<QAction*>(ui::actions::kNewFolder) != nullptr);
+    QVERIFY(window.findChild<QAction*>(ui::actions::kOpenInExplorer) != nullptr);
+    QVERIFY(window.findChild<QAction*>(ui::actions::kProperties) != nullptr);
 }
 
 QTEST_MAIN(NoteAppTests)

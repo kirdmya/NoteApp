@@ -7,6 +7,7 @@ namespace app { class App; }
 class QFileSystemModel;
 class QLabel;
 class QModelIndex;
+class QPoint;
 class QTreeView;
 class QTabWidget;
 class QPlainTextEdit;
@@ -24,6 +25,9 @@ private:
     void setupUiRuntime();
     void setupActions();
     void connectSignals();
+    void showTreeContextMenu(const QPoint& position);
+    void createNoteFile();
+    void createFolder();
     void restoreLastWorkspace();
     void openWorkspace();
     void openWelcomeTab();
@@ -31,10 +35,14 @@ private:
 
     void loadWorkspace(const QString& rootPath);
     void openItem(const QModelIndex& index);
-    bool maybeDeleteFile(const QString& fileName);
-    void deleteNote();
+    bool maybeDeletePath(const QString& displayName, bool isDirectory);
+    void deletePath();
+    void openFolderInExplorer();
+    void showProperties();
     void openNoteFile(const QString& filePath);
-    void renameNote();
+    void renamePath();
+    void showFileSystemError(const QString& title, const QString& message);
+    QString selectedDirectoryPath() const;
     void updateEditorTabTitle(QPlainTextEdit* editor);
     void updateTextCursor(QPlainTextEdit* editor);
 

@@ -4,6 +4,22 @@
 #include <QFile>
 #include <QFileInfo>
 
+namespace {
+
+QString normalizedEntryName(const QString& name)
+{
+    const QString normalized = name.trimmed();
+    if (normalized.isEmpty()
+        || normalized == "."
+        || normalized == ".."
+        || QFileInfo(normalized).fileName() != normalized) {
+        return {};
+    }
+    return normalized;
+}
+
+}
+
 namespace storage {
 
 QStringList FsFileRepository::listNoteFiles(const QString& rootPath)
@@ -52,49 +68,94 @@ bool FsFileRepository::writeTextFile(const QString& filePath, const QString& con
     return file.write(bytes) == bytes.size();
 }
 
-bool FsFileRepository::deleteFile(const QString& filePath)
+bool FsFileRepository::createFile(const QString& directoryPath,
+                                  const QString& fileName,
+                                  QString& createdFilePath)
 {
-    const QFileInfo info(filePath);
-    return info.exists()
-        && info.isFile()
-        && canOpenInEditor(filePath)
-        && QFile::remove(filePath);
-}
+    createdFilePath.clear();
 
-bool FsFileRepository::renameNote(const QString& filePath,
-                                  const QString& newFileName,
-                                  QString& renamedFilePath)
-{
-    renamedFilePath.clear();
-
-    const QFileInfo sourceInfo(filePath);
-    if (!sourceInfo.exists() || !sourceInfo.isFile() || !canOpenInEditor(filePath)) {
+    const QDir directory(directoryPath);
+    const QString normalizedName = normalizedEntryName(fileName);
+    if (!directory.exists() || normalizedName.isEmpty()) {
         return false;
     }
 
-    const QString normalizedName = newFileName.trimmed();
-    if (normalizedName.isEmpty()
-        || normalizedName == "."
-        || normalizedName == ".."
-        || QFileInfo(normalizedName).fileName() != normalizedName) {
+    const QString targetPath = directory.filePath(normalizedName);
+    if (!canOpenInEditor(targetPath) || QFileInfo::exists(targetPath)) {
+        return false;
+    }
+
+    QFile file(targetPath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::NewOnly | QIODevice::Text)) {
+        return false;
+    }
+
+    file.close();
+    createdFilePath = targetPath;
+    return true;
+}
+
+bool FsFileRepository::createFolder(const QString& directoryPath,
+                                    const QString& folderName,
+                                    QString& createdFolderPath)
+{
+    createdFolderPath.clear();
+
+    QDir directory(directoryPath);
+    const QString normalizedName = normalizedEntryName(folderName);
+    if (!directory.exists() || normalizedName.isEmpty()) {
+        return false;
+    }
+
+    const QString targetPath = directory.filePath(normalizedName);
+    if (QFileInfo::exists(targetPath) || !directory.mkdir(normalizedName)) {
+        return false;
+    }
+
+    createdFolderPath = targetPath;
+    return true;
+}
+
+bool FsFileRepository::moveToTrash(const QString& path)
+{
+    const QFileInfo info(path);
+    return info.exists() && QFile::moveToTrash(path);
+}
+
+bool FsFileRepository::renamePath(const QString& path,
+                                  const QString& newName,
+                                  QString& renamedPath)
+{
+    renamedPath.clear();
+
+    const QFileInfo sourceInfo(path);
+    const QString normalizedName = normalizedEntryName(newName);
+    if (!sourceInfo.exists() || normalizedName.isEmpty()) {
         return false;
     }
 
     const QString destinationPath = sourceInfo.dir().filePath(normalizedName);
-    if (!canOpenInEditor(destinationPath)) {
+    if (sourceInfo.isFile() && !canOpenInEditor(destinationPath)) {
         return false;
     }
 
     if (QFileInfo(destinationPath).absoluteFilePath() == sourceInfo.absoluteFilePath()) {
-        renamedFilePath = filePath;
+        renamedPath = path;
         return true;
     }
 
-    if (QFileInfo::exists(destinationPath) || !QFile::rename(filePath, destinationPath)) {
+    if (QFileInfo::exists(destinationPath)) {
         return false;
     }
 
-    renamedFilePath = destinationPath;
+    const bool renamed = sourceInfo.isDir()
+        ? QDir().rename(path, destinationPath)
+        : QFile::rename(path, destinationPath);
+    if (!renamed) {
+        return false;
+    }
+
+    renamedPath = destinationPath;
     return true;
 }
 
