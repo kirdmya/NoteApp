@@ -1,5 +1,16 @@
 # NoteApp
 
+<p align="center">
+  <img src="resource/social-preview.png" alt="NoteApp social preview" width="100%">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white" alt="C++ 17">
+  <img src="https://img.shields.io/badge/Qt-6-41CD52?logo=qt&logoColor=white" alt="Qt 6">
+  <img src="https://img.shields.io/badge/CMake-3.21%2B-064F8C?logo=cmake&logoColor=white" alt="CMake 3.21+">
+  <img src="https://img.shields.io/badge/Tests-Qt%20Test-41CD52?logo=qt&logoColor=white" alt="Qt Test">
+</p>
+
 Qt-приложение для локальных текстовых заметок, организованных в рабочие пространства.
 
 Возможности v0.2:
