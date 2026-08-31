@@ -31,6 +31,7 @@ private:
     void loadWorkspace(const QString& rootPath);
     void openItem(const QModelIndex& index);
     void openNoteFile(const QString& filePath);
+    void renameNote();
     void updateEditorTabTitle(QPlainTextEdit* editor);
 
     bool closeTabAt(int index);

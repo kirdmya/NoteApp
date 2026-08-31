@@ -2,18 +2,15 @@
 
 #include <QAction>
 #include <QDir>
-#include <QDebug>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemModel>
-#include <QFlags>
 #include <QInputDialog>
+#include <QLineEdit>
 #include <QMenuBar>
 #include <QMessageBox>
-#include <QMouseEvent>
 #include <QPlainTextEdit>
 #include <QSplitter>
-#include <QStandardItemModel> // Изначально предпологалось использование QStandardItemModel вместо QAbstractItemModel?
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QTextDocument>
@@ -26,33 +23,8 @@
 #include "ui/actions/ActionIds.h"
 #include "app/App.h"
 #include "app/AppVersion.h"
-#include "storage/FsFileRepository.h"
 
 namespace {
-
-class myItemModel : public QFileSystemModel {
-    //Q_OBJECT
-public:
-    explicit myItemModel(QObject *parent = nullptr) : QFileSystemModel(parent) {};
-
-    Qt::ItemFlags flags(const QModelIndex &index) const override {
-        if (!index.isValid()) {
-            return Qt::NoItemFlags;
-        }
-
-        Qt::ItemFlags oldFlags = QAbstractItemModel::flags(index);
-        return oldFlags | Qt::ItemIsEditable;
-    }
-
-    // QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override {
-    //     if (index.isValid() && role == Qt::DisplayRole && index.column() == 0) {
-    //         QString valueStr = QFileSystemModel::data(index, role).toString();
-    //         QFileInfo* fileInfo = new QFileInfo(valueStr);
-    //         return valueStr.remove("." + fileInfo->suffix());
-    //     }
-    //     return QFileSystemModel::data(index, role);
-    // }
-};
 
 QString workspaceDisplayName(const QString& rootPath)
 {
@@ -88,13 +60,13 @@ void MainWindow::setupUiRuntime()
 
     tree_ = new QTreeView(splitter);
     tree_->setHeaderHidden(true);
-    tree_->setEditTriggers(QAbstractItemView::SelectedClicked);
+    tree_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     tree_->setSortingEnabled(true);
     tree_->setMinimumWidth(57);
     tree_->setContextMenuPolicy(Qt::ActionsContextMenu);
 
     const QStringList filters = { "*.txt", "*.md" };
-    fileModel_ = new myItemModel(this);
+    fileModel_ = new QFileSystemModel(this);
     fileModel_->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
     fileModel_->setNameFilters(filters);
     fileModel_->setNameFilterDisables(false);
@@ -167,7 +139,7 @@ void MainWindow::connectSignals()
     auto* renameNote = findChild<QAction*>(ui::actions::kRenameNote);
     noteMenu->addAction(renameNote);
 
-    //connect(renameNote, &QAction::triggered,  &storage::FsFileRepository::renameNote);
+    connect(renameNote, &QAction::triggered, this, &MainWindow::renameNote);
 
 }
 
@@ -275,6 +247,54 @@ void MainWindow::openNoteFile(const QString& filePath)
     tabs_->setCurrentIndex(tabIndex);
 
     statusBar()->showMessage(QString("Opened: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
+}
+
+void MainWindow::renameNote()
+{
+    const QModelIndex index = tree_->currentIndex();
+    if (!index.isValid() || fileModel_->isDir(index)) {
+        statusBar()->showMessage("Select a note to rename", 3000);
+        return;
+    }
+
+    const QString filePath = fileModel_->filePath(index);
+    const QString currentName = fileModel_->fileName(index);
+
+    bool accepted = false;
+    const QString newFileName = QInputDialog::getText(
+        this,
+        "Rename note",
+        "New file name:",
+        QLineEdit::Normal,
+        currentName,
+        &accepted);
+
+    if (!accepted || newFileName.trimmed() == currentName) {
+        return;
+    }
+
+    QString renamedFilePath;
+    if (!app_.renameNote(filePath, newFileName, renamedFilePath)) {
+        statusBar()->showMessage("Unable to rename the selected note", 4000);
+        return;
+    }
+
+    for (int i = 0; i < tabs_->count(); ++i) {
+        QWidget* page = tabs_->widget(i);
+        if (page->property("filePath").toString() != filePath) {
+            continue;
+        }
+
+        page->setProperty("filePath", renamedFilePath);
+        if (auto* editor = qobject_cast<QPlainTextEdit*>(page)) {
+            updateEditorTabTitle(editor);
+        }
+        tabs_->setTabToolTip(i, QDir::toNativeSeparators(renamedFilePath));
+    }
+
+    statusBar()->showMessage(
+        QString("Renamed: %1").arg(QDir::toNativeSeparators(renamedFilePath)),
+        3000);
 }
 
 bool MainWindow::saveEditor(QPlainTextEdit* editor)

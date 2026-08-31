@@ -6,6 +6,7 @@
 #include <QTemporaryDir>
 #include <QTreeView>
 #include <QFile>
+#include <QFileInfo>
 
 #include "app/App.h"
 #include "app/AppVersion.h"
@@ -37,6 +38,8 @@ private slots:
     void listNoteFilesReturnsEmptyForMissingDirectory();
     void fileRepositoryReadsAndWritesSupportedFiles();
     void fileRepositoryRejectsUnsupportedFiles();
+    void fileRepositoryRenamesNote();
+    void fileRepositoryRejectsInvalidRename();
     void workspaceServiceStartsWithDefaultWorkspace();
     void workspaceServicePersistsLastWorkspacePath();
     void appCreatesCoreServices();
@@ -104,6 +107,39 @@ void NoteAppTests::fileRepositoryRejectsUnsupportedFiles()
     QVERIFY(!repo.canOpenInEditor(filePath));
     QVERIFY(!repo.readTextFile(filePath, content));
     QVERIFY(!repo.writeTextFile(filePath, "updated"));
+}
+
+void NoteAppTests::fileRepositoryRenamesNote()
+{
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    const QString sourcePath = tempDir.filePath("before.md");
+    createFile(sourcePath);
+
+    storage::FsFileRepository repo;
+    QString renamedPath;
+
+    QVERIFY(repo.renameNote(sourcePath, "after.md", renamedPath));
+    QCOMPARE(renamedPath, tempDir.filePath("after.md"));
+    QVERIFY(!QFileInfo::exists(sourcePath));
+    QVERIFY(QFileInfo::exists(renamedPath));
+}
+
+void NoteAppTests::fileRepositoryRejectsInvalidRename()
+{
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    const QString sourcePath = tempDir.filePath("note.md");
+    createFile(sourcePath);
+
+    storage::FsFileRepository repo;
+    QString renamedPath;
+
+    QVERIFY(!repo.renameNote(sourcePath, "../outside.md", renamedPath));
+    QVERIFY(!repo.renameNote(sourcePath, "image.png", renamedPath));
+    QVERIFY(QFileInfo::exists(sourcePath));
 }
 
 void NoteAppTests::workspaceServiceStartsWithDefaultWorkspace()

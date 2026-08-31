@@ -20,6 +20,9 @@ public:
     bool canOpenFileInEditor(const QString& filePath) const;
     bool readTextFile(const QString& filePath, QString& content) const;
     bool writeTextFile(const QString& filePath, const QString& content);
+    bool renameNote(const QString& filePath,
+                    const QString& newFileName,
+                    QString& renamedFilePath);
 
 private:
     std::unique_ptr<storage::IFileRepository> fileRepo_;
