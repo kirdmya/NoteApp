@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(NoteApp VERSION 0.1.0 LANGUAGES CXX)
+project(NoteApp VERSION 0.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -51,3 +51,9 @@ target_link_libraries(NoteApp PRIVATE Qt6::Widgets)
 
 # Чтобы пути include были удобнее
 target_include_directories(NoteApp PRIVATE src)
+option(NOTEAPP_BUILD_TESTS "Build NoteApp tests" ON)
+
+if (NOTEAPP_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(test)
+endif()

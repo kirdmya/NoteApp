@@ -1,51 +1,18 @@
-# First Level Heading
+# NoteApp
 
-Paragraph.
+Qt-приложение для локальных текстовых заметок, организованных в рабочие пространства.
 
-## Second Level Heading
+Возможности v0.2:
+- рабочие пространства с восстановлением последней открытой папки
+- ленивое дерево каталогов и заметок `.txt`/`.md`
+- создание, переименование и удаление файлов и папок
+- безопасное удаление через корзину ОС
+- контекстное меню с Explorer и свойствами
+- открытие и редактирование заметок во вкладках
 
-Paragraph.
-
-- bullet
-+ other bullet
-* another bullet
-    * child bullet
-
-1. ordered
-2. next ordered
-
-### Third Level Heading
-
-Some *italic* and **bold** text and `inline code`.
-
-An empty line starts a new paragraph.
-
-Use two spaces at the end  
-to force a line break.
-
-A horizontal ruler follows:
-
----
-
-Add links inline like [this link to the Qt homepage](https://www.qt.io),
-or with a reference like [this other link to the Qt homepage][1].
-
-    Add code blocks with
-    four spaces at the front.
-
-> A blockquote
-> starts with >
->
-> and has the same paragraph rules as normal text.
-
-First Level Heading in Alternate Style
-======================================
-
-Paragraph.
-
-Second Level Heading in Alternate Style
----------------------------------------
-
-Paragraph.
-
-[1]: https://www.qt.io
+Документация:
+- [Техническое задание](docs/TS/tech_spec.md)
+- [ТЗ v0.1](docs/TS/ts_v0_1.md)
+- [Обзор архитектуры](docs/architecture/overview.md)
+- [Модули](docs/architecture/modules.md)
+- [Git conventions](docs/workflows/git_conventions.md)

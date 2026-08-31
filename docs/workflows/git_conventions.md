@@ -1,8 +1,10 @@
 ## Стратегия коммита
 ---
+
+### Ветки
 main      — стабильная версия
 
-develop   — текущая разработка (если нужна)
+develop   — текущая разработка
 
 feature/* — новые фичи
 
@@ -50,5 +52,11 @@ Deletion is prevented if workspace is active.
 #### Когда НЕ нужен scope
 
 feat: initial project setup
+
+#### Если поддержка чего-либо убирается - добавляй BREAKING CHANGE
+
+feat(core): saving files doesn't support Windows 7
+
+BREAKING CHANGE!: files' save doesn't support Windows 7 anymore
 
 

@@ -9,6 +9,9 @@ int main(int argc, char *argv[])
     a.setApplicationName(app::kAppName);
     a.setApplicationVersion(app::kAppVersion);
 
+    QCoreApplication::setOrganizationName("O-O");
+    QCoreApplication::setApplicationName("O-Range");
+
     app::App app;
 
     ui::MainWindow w(app);

@@ -1,6 +1,7 @@
 #include "PlaceholderWidget.h"
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QPushButton>
 
 namespace ui {
 
@@ -10,6 +11,7 @@ PlaceholderWidget::PlaceholderWidget(const QString& title, QWidget* parent)
     auto* layout = new QVBoxLayout(this);
     label_ = new QLabel(title, this);
     label_->setAlignment(Qt::AlignCenter);
+
     layout->addWidget(label_);
 }
 

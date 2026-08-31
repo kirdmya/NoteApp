@@ -1,7 +1,8 @@
 #pragma once
 #include <QWidget>
 
-class QLabel;
+class QLabel; // почему просто не сделать #include <QLabel> ?
+class QPushButton;
 
 namespace ui {
 
