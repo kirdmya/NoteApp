@@ -12,6 +12,7 @@ include(warnings OPTIONAL)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 qt_standard_project_setup()
+set(CMAKE_AUTORCC ON)
 
 qt_add_executable(NoteApp
     src/app/main.cpp
@@ -45,6 +46,8 @@ qt_add_executable(NoteApp
     src/infra/logging/Logger.cpp
     src/infra/settings/Settings.h
     src/infra/settings/Settings.cpp
+
+    resource/resources.qrc
 )
 
 target_link_libraries(NoteApp PRIVATE Qt6::Widgets)
