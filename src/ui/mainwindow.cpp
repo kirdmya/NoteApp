@@ -6,7 +6,9 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemModel>
+#include <QInputDialog>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPlainTextEdit>
@@ -65,8 +67,12 @@ void MainWindow::setupUiRuntime()
     tree_->setMinimumWidth(57);
     tree_->setContextMenuPolicy(Qt::ActionsContextMenu);
 
+    const QStringList filters = { "*.txt", "*.md" };
     fileModel_ = new QFileSystemModel(this);
     fileModel_->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
+    fileModel_->setNameFilters(filters);
+    fileModel_->setNameFilterDisables(false);
+    tree_->setModel(fileModel_);
 
     tabs_ = new QTabWidget(splitter);
     tabs_->setTabsClosable(true);
@@ -98,6 +104,9 @@ void MainWindow::setupActions()
 
     auto* save = new QAction("Save", this);
     save->setObjectName(ui::actions::kSave);
+
+    auto* renameNote = new QAction("Rename", this);
+    renameNote->setObjectName(ui::actions::kRenameNote);
 
     auto* exit = new QAction("Exit", this);
     exit->setObjectName(ui::actions::kExit);
@@ -135,31 +144,24 @@ void MainWindow::connectSignals()
 
     connect(tree_, &QTreeView::activated, this, &MainWindow::openItem);
 
-    connect(tabs_, &QTabWidget::tabCloseRequested, this, [this](int index) {
+    connect(tabs_, &QTabWidget::tabCloseRequested, this, [this](const int index) {
         (void)closeTabAt(index);
     });
 
     connect(tabs_, &QTabWidget::currentChanged, this, [this](int index) {
-        QWidget* editor = tabs_->widget(index);
-        (void)updateTextCursor(qobject_cast<QPlainTextEdit*>(editor));
-        }); // странно, не думал что qwidget можно
-            // превратить в qplaintextedit
+        updateTextCursor(qobject_cast<QPlainTextEdit*>(tabs_->widget(index)));
+    });
 
     QMenu* noteMenu = new QMenu(tree_);
     tree_->addAction(noteMenu->menuAction());
 
+    auto* renameNote = findChild<QAction*>(ui::actions::kRenameNote);
     auto* deleteNote = findChild<QAction*>(ui::actions::kDeleteNote);
+    noteMenu->addAction(renameNote);
     noteMenu->addAction(deleteNote);
 
-    connect(deleteNote, &QAction::triggered, this, [this](int index) {
-        if (tree_->selectionModel()->hasSelection() && maybeDeleteFile()) {
-            closeTabAt(index);
-            app_.deleteFile(fileModel_->filePath(tree_->currentIndex()));
-        }
-        else {
-            statusBar()->showMessage("Any note isn't selected", 4000);
-        }
-    });
+    connect(renameNote, &QAction::triggered, this, &MainWindow::renameNote);
+    connect(deleteNote, &QAction::triggered, this, &MainWindow::deleteNote);
 }
 
 void MainWindow::restoreLastWorkspace()
@@ -230,10 +232,8 @@ void MainWindow::openItem(const QModelIndex& index)
     openNoteFile(info.filePath());
 }
 
-bool MainWindow::maybeDeleteFile()
+bool MainWindow::maybeDeleteFile(const QString& fileName)
 {
-    const QString fileName = fileModel_->fileName(tree_->currentIndex());
-
     QMessageBox box(this);
     box.setIcon(QMessageBox::Warning);
     box.setWindowTitle("Deleting File");
@@ -243,8 +243,39 @@ bool MainWindow::maybeDeleteFile()
     box.setDefaultButton(QMessageBox::No);
 
     const int answer = box.exec();
-    if (answer == QMessageBox::Yes) return true;
-    return false;
+    return answer == QMessageBox::Yes;
+}
+
+void MainWindow::deleteNote()
+{
+    const QModelIndex index = tree_->currentIndex();
+    if (!index.isValid() || fileModel_->isDir(index)) {
+        statusBar()->showMessage("Select a note to delete", 4000);
+        return;
+    }
+
+    const QString filePath = fileModel_->filePath(index);
+    const QString fileName = fileModel_->fileName(index);
+    if (!maybeDeleteFile(fileName)) {
+        return;
+    }
+
+    if (!app_.deleteFile(filePath)) {
+        statusBar()->showMessage("Unable to delete the selected note", 4000);
+        return;
+    }
+
+    for (int i = tabs_->count() - 1; i >= 0; --i) {
+        QWidget* page = tabs_->widget(i);
+        if (page->property("filePath").toString() == filePath) {
+            tabs_->removeTab(i);
+            page->deleteLater();
+        }
+    }
+
+    openWelcomeTab();
+    updateTextCursor(qobject_cast<QPlainTextEdit*>(tabs_->currentWidget()));
+    statusBar()->showMessage(QString("Deleted: %1").arg(fileName), 3000);
 }
 
 void MainWindow::openNoteFile(const QString& filePath)
@@ -294,6 +325,54 @@ void MainWindow::openNoteFile(const QString& filePath)
     statusBar()->showMessage(QString("Opened: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
 }
 
+void MainWindow::renameNote()
+{
+    const QModelIndex index = tree_->currentIndex();
+    if (!index.isValid() || fileModel_->isDir(index)) {
+        statusBar()->showMessage("Select a note to rename", 3000);
+        return;
+    }
+
+    const QString filePath = fileModel_->filePath(index);
+    const QString currentName = fileModel_->fileName(index);
+
+    bool accepted = false;
+    const QString newFileName = QInputDialog::getText(
+        this,
+        "Rename note",
+        "New file name:",
+        QLineEdit::Normal,
+        currentName,
+        &accepted);
+
+    if (!accepted || newFileName.trimmed() == currentName) {
+        return;
+    }
+
+    QString renamedFilePath;
+    if (!app_.renameNote(filePath, newFileName, renamedFilePath)) {
+        statusBar()->showMessage("Unable to rename the selected note", 4000);
+        return;
+    }
+
+    for (int i = 0; i < tabs_->count(); ++i) {
+        QWidget* page = tabs_->widget(i);
+        if (page->property("filePath").toString() != filePath) {
+            continue;
+        }
+
+        page->setProperty("filePath", renamedFilePath);
+        if (auto* editor = qobject_cast<QPlainTextEdit*>(page)) {
+            updateEditorTabTitle(editor);
+        }
+        tabs_->setTabToolTip(i, QDir::toNativeSeparators(renamedFilePath));
+    }
+
+    statusBar()->showMessage(
+        QString("Renamed: %1").arg(QDir::toNativeSeparators(renamedFilePath)),
+        3000);
+}
+
 bool MainWindow::saveEditor(QPlainTextEdit* editor)
 {
     if (editor == nullptr) return false;
@@ -329,15 +408,16 @@ bool MainWindow::maybeSaveEditor(QPlainTextEdit* editor)
 }
 
 void MainWindow::updateTextCursor(QPlainTextEdit* editor) {
-    if (editor == nullptr || editor == 0) {
+    if (editor == nullptr) {
         textInfo_->setText("column: 1, row: 1");
+        textInfo_->setVisible(false);
         return;
     }
 
-    if (editor->textCursor().blockNumber() >= 0 && editor->textCursor().columnNumber() >= 0)
-        textInfo_->setText(QString("column: %1, row: %2").arg(editor->textCursor().blockNumber() + 1)
-                                                         .arg(editor->textCursor().columnNumber() + 1));
-    return;
+    textInfo_->setVisible(true);
+    textInfo_->setText(QString("column: %1, row: %2")
+        .arg(editor->textCursor().columnNumber() + 1)
+        .arg(editor->textCursor().blockNumber() + 1));
 }
 
 bool MainWindow::closeTabAt(int index)
@@ -393,7 +473,6 @@ void MainWindow::openWelcomeTab()
 {
     if (tabs_->count() == 0) {
         tabs_->addTab(new PlaceholderWidget("Open a workspace to browse notes", tabs_), "Welcome");
-        //if (textInfo_) textInfo_->hide();
     }
 }
 

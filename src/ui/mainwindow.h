@@ -31,8 +31,10 @@ private:
 
     void loadWorkspace(const QString& rootPath);
     void openItem(const QModelIndex& index);
-    bool maybeDeleteFile();
+    bool maybeDeleteFile(const QString& fileName);
+    void deleteNote();
     void openNoteFile(const QString& filePath);
+    void renameNote();
     void updateEditorTabTitle(QPlainTextEdit* editor);
     void updateTextCursor(QPlainTextEdit* editor);
 

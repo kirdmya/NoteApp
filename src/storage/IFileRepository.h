@@ -13,6 +13,9 @@ public:
     virtual bool readTextFile(const QString& filePath, QString& content) const = 0;
     virtual bool writeTextFile(const QString& filePath, const QString& content) = 0;
     virtual bool deleteFile(const QString& filePath) = 0;
+    virtual bool renameNote(const QString& filePath,
+                            const QString& newFileName,
+                            QString& renamedFilePath) = 0;
 };
 
 }

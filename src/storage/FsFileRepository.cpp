@@ -52,13 +52,50 @@ bool FsFileRepository::writeTextFile(const QString& filePath, const QString& con
     return file.write(bytes) == bytes.size();
 }
 
-bool FsFileRepository::deleteFile(const QString& filePath) {
-    if (QFile::exists(filePath)) {
-        QFile::remove(filePath);
+bool FsFileRepository::deleteFile(const QString& filePath)
+{
+    const QFileInfo info(filePath);
+    return info.exists()
+        && info.isFile()
+        && canOpenInEditor(filePath)
+        && QFile::remove(filePath);
+}
+
+bool FsFileRepository::renameNote(const QString& filePath,
+                                  const QString& newFileName,
+                                  QString& renamedFilePath)
+{
+    renamedFilePath.clear();
+
+    const QFileInfo sourceInfo(filePath);
+    if (!sourceInfo.exists() || !sourceInfo.isFile() || !canOpenInEditor(filePath)) {
+        return false;
+    }
+
+    const QString normalizedName = newFileName.trimmed();
+    if (normalizedName.isEmpty()
+        || normalizedName == "."
+        || normalizedName == ".."
+        || QFileInfo(normalizedName).fileName() != normalizedName) {
+        return false;
+    }
+
+    const QString destinationPath = sourceInfo.dir().filePath(normalizedName);
+    if (!canOpenInEditor(destinationPath)) {
+        return false;
+    }
+
+    if (QFileInfo(destinationPath).absoluteFilePath() == sourceInfo.absoluteFilePath()) {
+        renamedFilePath = filePath;
         return true;
     }
 
-    return false;
+    if (QFileInfo::exists(destinationPath) || !QFile::rename(filePath, destinationPath)) {
+        return false;
+    }
+
+    renamedFilePath = destinationPath;
+    return true;
 }
 
 }
