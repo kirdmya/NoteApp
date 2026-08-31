@@ -167,7 +167,7 @@ void MainWindow::connectSignals()
     auto* renameNote = findChild<QAction*>(ui::actions::kRenameNote);
     noteMenu->addAction(renameNote);
 
-    connect(renameNote, &QAction::triggered, ,  &storage::FsFileRepository::renameNote);
+    //connect(renameNote, &QAction::triggered,  &storage::FsFileRepository::renameNote);
 
 }
 
