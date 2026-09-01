@@ -32,6 +32,7 @@ private:
     void openWorkspace();
     void openWelcomeTab();
     void saveCurrentNote();
+    void saveCurrentNoteAs();
 
     void loadWorkspace(const QString& rootPath);
     void openItem(const QModelIndex& index);
@@ -49,6 +50,7 @@ private:
     bool closeTabAt(int index);
     bool maybeSaveEditor(QPlainTextEdit* editor);
     bool saveEditor(QPlainTextEdit* editor);
+    bool saveEditorAs(QPlainTextEdit* editor);
 
     app::App& app_;
     QFileSystemModel* fileModel_ = nullptr;

@@ -13,6 +13,7 @@
 #include "app/App.h"
 #include "app/AppVersion.h"
 #include "core/usecases/WorkspaceService.h"
+#include "core/usecases/DocumentManager.h"
 #include "infra/settings/Settings.h"
 #include "network/StubNetworkClient.h"
 #include "storage/FsFileRepository.h"
@@ -41,6 +42,8 @@ private slots:
     void listNoteFilesReturnsOnlySupportedExtensions();
     void listNoteFilesReturnsEmptyForMissingDirectory();
     void fileRepositoryReadsAndWritesSupportedFiles();
+    void fileRepositorySaveAsCreatesFile();
+    void fileRepositoryDoesNotRecreateMissingFile();
     void fileRepositoryRejectsUnsupportedFiles();
     void fileRepositoryCreatesFileAndFolder();
     void fileRepositoryRejectsDuplicateEntries();
@@ -51,6 +54,7 @@ private slots:
     void fileRepositoryRejectsInvalidRename();
     void workspaceServiceStartsWithDefaultWorkspace();
     void workspaceServicePersistsLastWorkspacePath();
+    void documentManagerTracksSessions();
     void appCreatesCoreServices();
     void mainWindowBuildsExpectedUi();
 };
@@ -116,6 +120,32 @@ void NoteAppTests::fileRepositoryReadsAndWritesSupportedFiles()
     QVERIFY(repo.writeTextFile(filePath, "updated"));
     QVERIFY(repo.readTextFile(filePath, content));
     QCOMPARE(content, QString("updated"));
+}
+
+void NoteAppTests::fileRepositorySaveAsCreatesFile()
+{
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    const QString filePath = tempDir.filePath("saved-as.md");
+    storage::FsFileRepository repo;
+    QString content;
+
+    QVERIFY(repo.writeTextFileAs(filePath, "new content"));
+    QVERIFY(repo.readTextFile(filePath, content));
+    QCOMPARE(content, QString("new content"));
+}
+
+void NoteAppTests::fileRepositoryDoesNotRecreateMissingFile()
+{
+    QTemporaryDir tempDir;
+    QVERIFY(tempDir.isValid());
+
+    const QString filePath = tempDir.filePath("missing.txt");
+    storage::FsFileRepository repo;
+
+    QVERIFY(!repo.writeTextFile(filePath, "content"));
+    QVERIFY(!QFileInfo::exists(filePath));
 }
 
 void NoteAppTests::fileRepositoryRejectsUnsupportedFiles()
@@ -272,12 +302,39 @@ void NoteAppTests::workspaceServicePersistsLastWorkspacePath()
     QCOMPARE(settings.lastWorkspacePath(), expected.rootPath);
 }
 
+void NoteAppTests::documentManagerTracksSessions()
+{
+    core::DocumentManager manager;
+
+    core::DocumentSession& first = manager.open("C:/notes/first.md", "alpha");
+    QCOMPARE(first.text, QString("alpha"));
+    QCOMPARE(manager.sessions().size(), 1);
+
+    manager.open("C:/notes/first.md", "ignored duplicate");
+    manager.open("C:/notes/nested/second.txt", "beta");
+    QCOMPARE(manager.sessions().size(), 2);
+
+    manager.update("C:/notes/first.md", "changed", true);
+    const core::DocumentSession* updated = manager.find("C:/notes/first.md");
+    QVERIFY(updated != nullptr);
+    QCOMPARE(updated->text, QString("changed"));
+    QVERIFY(updated->modified);
+
+    QCOMPARE(manager.remapPath("C:/notes", "D:/workspace"), 2);
+    QVERIFY(manager.find("D:/workspace/first.md") != nullptr);
+    QCOMPARE(manager.closeUnder("D:/workspace/nested"), 1);
+    QCOMPARE(manager.sessions().size(), 1);
+    QVERIFY(manager.close("D:/workspace/first.md"));
+    QVERIFY(manager.sessions().isEmpty());
+}
+
 void NoteAppTests::appCreatesCoreServices()
 {
     app::App app;
 
     QCOMPARE(app.settings().lastWorkspacePath(), QString());
     QCOMPARE(app.workspaceService().current().displayName, QString("No workspace"));
+    QVERIFY(app.documentManager().sessions().isEmpty());
     QVERIFY(app.canOpenFileInEditor("note.txt"));
     QVERIFY(!app.canOpenFileInEditor("note.bin"));
 }
@@ -298,7 +355,12 @@ void NoteAppTests::mainWindowBuildsExpectedUi()
     QCOMPARE(tabs->tabText(0), QString("Welcome"));
 
     QVERIFY(window.findChild<QAction*>(ui::actions::kOpenWorkspace) != nullptr);
-    QVERIFY(window.findChild<QAction*>(ui::actions::kSave) != nullptr);
+    auto* saveAction = window.findChild<QAction*>(ui::actions::kSave);
+    auto* saveAsAction = window.findChild<QAction*>(ui::actions::kSaveAs);
+    QVERIFY(saveAction != nullptr);
+    QVERIFY(saveAsAction != nullptr);
+    QCOMPARE(saveAction->shortcut(), QKeySequence::Save);
+    QCOMPARE(saveAsAction->shortcut(), QKeySequence::SaveAs);
     QVERIFY(window.findChild<QAction*>(ui::actions::kExit) != nullptr);
     QVERIFY(window.findChild<QAction*>(ui::actions::kAbout) != nullptr);
     QVERIFY(window.findChild<QAction*>(ui::actions::kRenameNote) != nullptr);

@@ -55,7 +55,20 @@ bool FsFileRepository::readTextFile(const QString& filePath, QString& content) c
 
 bool FsFileRepository::writeTextFile(const QString& filePath, const QString& content)
 {
-    if (!canOpenInEditor(filePath)) {
+    const QFileInfo info(filePath);
+    if (!canOpenInEditor(filePath) || !info.exists() || !info.isFile()) {
+        return false;
+    }
+
+    return writeTextFileAs(filePath, content);
+}
+
+bool FsFileRepository::writeTextFileAs(const QString& filePath, const QString& content)
+{
+    const QFileInfo info(filePath);
+    if (!canOpenInEditor(filePath)
+        || !info.dir().exists()
+        || (info.exists() && !info.isFile())) {
         return false;
     }
 

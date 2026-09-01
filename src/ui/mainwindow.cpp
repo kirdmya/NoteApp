@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemModel>
+#include <QFontDatabase>
 #include <QInputDialog>
 #include <QKeySequence>
 #include <QLabel>
@@ -16,6 +17,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPlainTextEdit>
+#include <QPushButton>
 #include <QSplitter>
 #include <QStatusBar>
 #include <QTabWidget>
@@ -24,6 +26,7 @@
 #include <QUrl>
 
 #include "core/domain/Workspace.h"
+#include "core/usecases/DocumentManager.h"
 #include "core/usecases/IWorkspaceService.h"
 #include "infra/settings/Settings.h"
 #include "ui/widgets/PlaceholderWidget.h"
@@ -154,6 +157,10 @@ void MainWindow::setupActions()
     save->setObjectName(ui::actions::kSave);
     save->setShortcut(QKeySequence::Save);
 
+    auto* saveAs = new QAction("Save As...", this);
+    saveAs->setObjectName(ui::actions::kSaveAs);
+    saveAs->setShortcut(QKeySequence::SaveAs);
+
     auto* newFile = new QAction("New File...", this);
     newFile->setObjectName(ui::actions::kNewFile);
 
@@ -166,9 +173,12 @@ void MainWindow::setupActions()
     auto* exit = new QAction("Exit", this);
     exit->setObjectName(ui::actions::kExit);
 
+    fileMenu->addAction(newFile);
+    fileMenu->addSeparator();
     fileMenu->addAction(openWorkspace);
     fileMenu->addSeparator();
     fileMenu->addAction(save);
+    fileMenu->addAction(saveAs);
     fileMenu->addSeparator();
     fileMenu->addAction(exit);
 
@@ -200,10 +210,13 @@ void MainWindow::connectSignals()
     auto* save = findChild<QAction*>(ui::actions::kSave);
     connect(save, &QAction::triggered, this, &MainWindow::saveCurrentNote);
 
+    auto* saveAs = findChild<QAction*>(ui::actions::kSaveAs);
+    connect(saveAs, &QAction::triggered, this, &MainWindow::saveCurrentNoteAs);
+
     auto* openWorkspace = findChild<QAction*>(ui::actions::kOpenWorkspace);
     connect(openWorkspace, &QAction::triggered, this, &MainWindow::openWorkspace);
 
-    connect(tree_, &QTreeView::activated, this, &MainWindow::openItem);
+    connect(tree_, &QTreeView::doubleClicked, this, &MainWindow::openItem);
 
     connect(tabs_, &QTabWidget::tabCloseRequested, this, [this](const int index) {
         (void)closeTabAt(index);
@@ -270,7 +283,8 @@ QString MainWindow::selectedDirectoryPath() const
 {
     const QModelIndex index = tree_->currentIndex();
     if (!index.isValid()) {
-        return {};
+        const QString workspacePath = app_.workspaceService().current().rootPath;
+        return QDir(workspacePath).exists() ? workspacePath : QString{};
     }
 
     const QFileInfo info(fileModel_->filePath(index));
@@ -287,6 +301,7 @@ void MainWindow::createNoteFile()
 {
     const QString directoryPath = selectedDirectoryPath();
     if (directoryPath.isEmpty()) {
+        statusBar()->showMessage("Open a workspace before creating a file", 4000);
         return;
     }
 
@@ -338,6 +353,7 @@ void MainWindow::createFolder()
 {
     const QString directoryPath = selectedDirectoryPath();
     if (directoryPath.isEmpty()) {
+        statusBar()->showMessage("Open a workspace before creating a folder", 4000);
         return;
     }
 
@@ -399,6 +415,17 @@ void MainWindow::loadWorkspace(const QString& rootPath)
     if (!info.exists() || !info.isDir()) {
         statusBar()->showMessage("Selected path is not a valid folder", 4000);
         return;
+    }
+
+    const QString currentRoot = app_.workspaceService().current().rootPath;
+    if (!currentRoot.isEmpty() && !pathsEqual(currentRoot, rootPath)) {
+        for (int i = tabs_->count() - 1; i >= 0; --i) {
+            if (qobject_cast<QPlainTextEdit*>(tabs_->widget(i)) != nullptr
+                && !closeTabAt(i)) {
+                statusBar()->showMessage("Workspace switch cancelled", 3000);
+                return;
+            }
+        }
     }
 
     const QModelIndex rootIndex = fileModel_->setRootPath(rootPath);
@@ -482,6 +509,8 @@ void MainWindow::deletePath()
         return;
     }
 
+    app_.documentManager().closeUnder(path);
+
     for (int i = tabs_->count() - 1; i >= 0; --i) {
         QWidget* page = tabs_->widget(i);
         if (isSameOrChildPath(page->property("filePath").toString(), path)) {
@@ -545,7 +574,7 @@ void MainWindow::showProperties()
 void MainWindow::openNoteFile(const QString& filePath)
 {
     for (int i = 0; i < tabs_->count(); ++i) {
-        if (tabs_->widget(i)->property("filePath").toString() == filePath) {
+        if (pathsEqual(tabs_->widget(i)->property("filePath").toString(), filePath)) {
             tabs_->setCurrentIndex(i);
             return;
         }
@@ -553,9 +582,13 @@ void MainWindow::openNoteFile(const QString& filePath)
 
     QString content;
     if (!app_.readTextFile(filePath, content)) {
-        statusBar()->showMessage("Unable to open the selected file", 4000);
+        showFileSystemError(
+            "Unable to open file",
+            "The selected file could not be opened. It may have been moved, deleted, or made inaccessible.");
         return;
     }
+
+    core::DocumentSession& session = app_.documentManager().open(filePath, content);
 
     if (tabs_->count() == 1 && qobject_cast<PlaceholderWidget*>(tabs_->widget(0)) != nullptr) {
         QWidget* welcomeTab = tabs_->widget(0);
@@ -564,13 +597,25 @@ void MainWindow::openNoteFile(const QString& filePath)
     }
 
     auto* editor = new QPlainTextEdit(tabs_);
-    editor->setPlainText(content);
+    editor->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    editor->setPlainText(session.text);
     editor->document()->setModified(false);
     editor->setProperty("filePath", filePath);
 
 
-    connect(editor->document(), &QTextDocument::modificationChanged, this, [this, editor](bool) {
+    connect(editor->document(), &QTextDocument::modificationChanged, this, [this, editor](const bool modified) {
+        app_.documentManager().update(
+            editor->property("filePath").toString(),
+            editor->toPlainText(),
+            modified);
         updateEditorTabTitle(editor);
+    });
+
+    connect(editor, &QPlainTextEdit::textChanged, this, [this, editor]() {
+        app_.documentManager().update(
+            editor->property("filePath").toString(),
+            editor->toPlainText(),
+            editor->document()->isModified());
     });
 
 
@@ -624,6 +669,8 @@ void MainWindow::renamePath()
         return;
     }
 
+    app_.documentManager().remapPath(oldPath, renamedPath);
+
     for (int i = 0; i < tabs_->count(); ++i) {
         QWidget* page = tabs_->widget(i);
         const QString openPath = page->property("filePath").toString();
@@ -646,14 +693,95 @@ void MainWindow::renamePath()
 
 bool MainWindow::saveEditor(QPlainTextEdit* editor)
 {
-    if (editor == nullptr) return false;
+    if (editor == nullptr) {
+        return false;
+    }
 
     const QString filePath = editor->property("filePath").toString();
-    if (!app_.canOpenFileInEditor(filePath)) return false;
-    if (!app_.writeTextFile(filePath, editor->toPlainText())) return false;
+    if (!app_.canOpenFileInEditor(filePath)) {
+        return false;
+    }
+
+    if (!app_.writeTextFile(filePath, editor->toPlainText())) {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle("Unable to save file");
+        box.setText("The original file is no longer writable.");
+        box.setInformativeText(
+            "It may have been moved, deleted, or locked by another application. Save the document to a new location?");
+        auto* saveAsButton = box.addButton("Save As...", QMessageBox::AcceptRole);
+        box.addButton(QMessageBox::Cancel);
+        box.exec();
+        return box.clickedButton() == saveAsButton && saveEditorAs(editor);
+    }
 
     editor->document()->setModified(false);
+    app_.documentManager().update(filePath, editor->toPlainText(), false);
     updateEditorTabTitle(editor);
+    statusBar()->showMessage(QString("Saved: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
+    return true;
+}
+
+bool MainWindow::saveEditorAs(QPlainTextEdit* editor)
+{
+    if (editor == nullptr) {
+        return false;
+    }
+
+    const QString oldPath = editor->property("filePath").toString();
+    const QFileInfo oldInfo(oldPath);
+    QString suggestedPath = oldPath;
+    if (!oldInfo.dir().exists()) {
+        suggestedPath = QDir(app_.workspaceService().current().rootPath)
+            .filePath(oldInfo.fileName());
+    }
+
+    QString selectedFilter;
+    QString targetPath = QFileDialog::getSaveFileName(
+        this,
+        "Save note as",
+        suggestedPath,
+        "Markdown files (*.md);;Text files (*.txt)",
+        &selectedFilter);
+    if (targetPath.isEmpty()) {
+        return false;
+    }
+
+    if (QFileInfo(targetPath).suffix().isEmpty()) {
+        targetPath += selectedFilter.startsWith("Text") ? ".txt" : ".md";
+    }
+
+    for (int i = 0; i < tabs_->count(); ++i) {
+        QWidget* page = tabs_->widget(i);
+        if (page != editor && pathsEqual(page->property("filePath").toString(), targetPath)) {
+            showFileSystemError(
+                "Unable to save file",
+                "The selected destination is already open in another tab.");
+            return false;
+        }
+    }
+
+    if (!app_.writeTextFileAs(targetPath, editor->toPlainText())) {
+        showFileSystemError(
+            "Unable to save file",
+            "The document could not be saved to the selected location. Check the extension and permissions.");
+        return false;
+    }
+
+    app_.documentManager().remapPath(oldPath, targetPath);
+    editor->setProperty("filePath", targetPath);
+    editor->document()->setModified(false);
+    app_.documentManager().update(targetPath, editor->toPlainText(), false);
+    updateEditorTabTitle(editor);
+
+    const int tabIndex = tabs_->indexOf(editor);
+    if (tabIndex >= 0) {
+        tabs_->setTabToolTip(tabIndex, QDir::toNativeSeparators(targetPath));
+    }
+
+    statusBar()->showMessage(
+        QString("Saved as: %1").arg(QDir::toNativeSeparators(targetPath)),
+        3000);
     return true;
 }
 
@@ -697,10 +825,14 @@ bool MainWindow::closeTabAt(int index)
 
     QWidget* page = tabs_->widget(index);
     auto* editor = qobject_cast<QPlainTextEdit*>(page);
+    const QString filePath = page->property("filePath").toString();
 
     if (editor != nullptr && !maybeSaveEditor(editor)) return false;
 
     tabs_->removeTab(index);
+    if (!filePath.isEmpty()) {
+        app_.documentManager().close(filePath);
+    }
     page->deleteLater();
     openWelcomeTab();
     updateTextCursor(qobject_cast<QPlainTextEdit*>(tabs_->currentWidget()));
@@ -726,18 +858,18 @@ void MainWindow::saveCurrentNote()
         return;
     }
 
-    const QString filePath = editor->property("filePath").toString();
-    if (!app_.canOpenFileInEditor(filePath)) {
-        statusBar()->showMessage("The current tab is not a supported note file", 3000);
-        return;
-    }
-    if (!app_.writeTextFile(filePath, editor->toPlainText())) {
-        statusBar()->showMessage("Unable to save the full file content", 4000);
+    (void)saveEditor(editor);
+}
+
+void MainWindow::saveCurrentNoteAs()
+{
+    auto* editor = qobject_cast<QPlainTextEdit*>(tabs_->currentWidget());
+    if (editor == nullptr) {
+        statusBar()->showMessage("No editable note is open", 3000);
         return;
     }
 
-    editor->document()->setModified(false);
-    statusBar()->showMessage(QString("Saved: %1").arg(QDir::toNativeSeparators(filePath)), 3000);
+    (void)saveEditorAs(editor);
 }
 
 void MainWindow::openWelcomeTab()
