@@ -51,8 +51,8 @@ flowchart TB
 |---|---|---|
 | `app` | Запуск приложения и сборка графа объектов | `main`, `App`, `AppVersion` |
 | `ui` | Окна, виджеты, действия пользователя и отображение данных | `MainWindow`, `PlaceholderWidget`, `ActionIds` |
-| `core/domain` | Доменные типы без логики представления | `Workspace`, `NoteId` |
-| `core/usecases` | Сценарии использования приложения | `IWorkspaceService`, `WorkspaceService` |
+| `core/domain` | Доменные типы без логики представления | `Workspace`, `NoteId`, `DocumentSession` |
+| `core/usecases` | Сценарии использования приложения | `IWorkspaceService`, `WorkspaceService`, `DocumentManager` |
 | `storage` | Абстракция и реализация доступа к файлам | `IFileRepository`, `FsFileRepository` |
 | `network` | Абстракция сетевого доступа и временная реализация | `INetworkClient`, `StubNetworkClient` |
 | `infra` | Общие инфраструктурные службы | `Settings`, `Logger` |

@@ -8,6 +8,9 @@ add_executable(NoteAppTests
     ../src/app/AppVersion.h
 
     ../src/core/domain/Workspace.h
+    ../src/core/domain/DocumentSession.h
+    ../src/core/usecases/DocumentManager.h
+    ../src/core/usecases/DocumentManager.cpp
     ../src/core/usecases/IWorkspaceService.h
     ../src/core/usecases/WorkspaceService.h
     ../src/core/usecases/WorkspaceService.cpp
