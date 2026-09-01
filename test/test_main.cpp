@@ -33,7 +33,7 @@ void createFile(const QString& path)
 
 } // namespace
 
-class NoteAppTests final : public QObject {
+class ORangeTests final : public QObject {
     Q_OBJECT
 
 private slots:
@@ -59,23 +59,23 @@ private slots:
     void mainWindowBuildsExpectedUi();
 };
 
-void NoteAppTests::initTestCase()
+void ORangeTests::initTestCase()
 {
     QStandardPaths::setTestModeEnabled(true);
-    QCoreApplication::setOrganizationName("NoteAppTests");
-    QCoreApplication::setApplicationName("NoteAppTests");
+    QCoreApplication::setOrganizationName("ORangeTests");
+    QCoreApplication::setApplicationName("ORangeTests");
     QSettings::setDefaultFormat(QSettings::IniFormat);
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, QDir::tempPath());
 }
 
-void NoteAppTests::init()
+void ORangeTests::init()
 {
     QSettings settings;
     settings.clear();
     settings.sync();
 }
 
-void NoteAppTests::listNoteFilesReturnsOnlySupportedExtensions()
+void ORangeTests::listNoteFilesReturnsOnlySupportedExtensions()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -91,7 +91,7 @@ void NoteAppTests::listNoteFilesReturnsOnlySupportedExtensions()
     QCOMPARE(files, QStringList({"alpha.md", "beta.txt"}));
 }
 
-void NoteAppTests::listNoteFilesReturnsEmptyForMissingDirectory()
+void ORangeTests::listNoteFilesReturnsEmptyForMissingDirectory()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -102,7 +102,7 @@ void NoteAppTests::listNoteFilesReturnsEmptyForMissingDirectory()
     QVERIFY(files.isEmpty());
 }
 
-void NoteAppTests::fileRepositoryReadsAndWritesSupportedFiles()
+void ORangeTests::fileRepositoryReadsAndWritesSupportedFiles()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -122,7 +122,7 @@ void NoteAppTests::fileRepositoryReadsAndWritesSupportedFiles()
     QCOMPARE(content, QString("updated"));
 }
 
-void NoteAppTests::fileRepositorySaveAsCreatesFile()
+void ORangeTests::fileRepositorySaveAsCreatesFile()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -136,7 +136,7 @@ void NoteAppTests::fileRepositorySaveAsCreatesFile()
     QCOMPARE(content, QString("new content"));
 }
 
-void NoteAppTests::fileRepositoryDoesNotRecreateMissingFile()
+void ORangeTests::fileRepositoryDoesNotRecreateMissingFile()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -148,7 +148,7 @@ void NoteAppTests::fileRepositoryDoesNotRecreateMissingFile()
     QVERIFY(!QFileInfo::exists(filePath));
 }
 
-void NoteAppTests::fileRepositoryRejectsUnsupportedFiles()
+void ORangeTests::fileRepositoryRejectsUnsupportedFiles()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -164,7 +164,7 @@ void NoteAppTests::fileRepositoryRejectsUnsupportedFiles()
     QVERIFY(!repo.writeTextFile(filePath, "updated"));
 }
 
-void NoteAppTests::fileRepositoryCreatesFileAndFolder()
+void ORangeTests::fileRepositoryCreatesFileAndFolder()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -179,7 +179,7 @@ void NoteAppTests::fileRepositoryCreatesFileAndFolder()
     QVERIFY(QFileInfo(folderPath).isDir());
 }
 
-void NoteAppTests::fileRepositoryRejectsDuplicateEntries()
+void ORangeTests::fileRepositoryRejectsDuplicateEntries()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -194,7 +194,7 @@ void NoteAppTests::fileRepositoryRejectsDuplicateEntries()
     QVERIFY(!repo.createFolder(tempDir.path(), "Folder", createdPath));
 }
 
-void NoteAppTests::fileRepositoryMovesNoteToTrash()
+void ORangeTests::fileRepositoryMovesNoteToTrash()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -209,7 +209,7 @@ void NoteAppTests::fileRepositoryMovesNoteToTrash()
     QVERIFY(!QFileInfo::exists(filePath));
 }
 
-void NoteAppTests::fileRepositoryRejectsInvalidDelete()
+void ORangeTests::fileRepositoryRejectsInvalidDelete()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -222,7 +222,7 @@ void NoteAppTests::fileRepositoryRejectsInvalidDelete()
     QVERIFY(QFileInfo::exists(unsupportedPath));
 }
 
-void NoteAppTests::fileRepositoryRenamesNote()
+void ORangeTests::fileRepositoryRenamesNote()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -239,7 +239,7 @@ void NoteAppTests::fileRepositoryRenamesNote()
     QVERIFY(QFileInfo::exists(renamedPath));
 }
 
-void NoteAppTests::fileRepositoryRenamesFolder()
+void ORangeTests::fileRepositoryRenamesFolder()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -256,7 +256,7 @@ void NoteAppTests::fileRepositoryRenamesFolder()
     QVERIFY(QFileInfo(renamedPath).isDir());
 }
 
-void NoteAppTests::fileRepositoryRejectsInvalidRename()
+void ORangeTests::fileRepositoryRejectsInvalidRename()
 {
     QTemporaryDir tempDir;
     QVERIFY(tempDir.isValid());
@@ -272,7 +272,7 @@ void NoteAppTests::fileRepositoryRejectsInvalidRename()
     QVERIFY(QFileInfo::exists(sourcePath));
 }
 
-void NoteAppTests::workspaceServiceStartsWithDefaultWorkspace()
+void ORangeTests::workspaceServiceStartsWithDefaultWorkspace()
 {
     storage::FsFileRepository repo;
     network::StubNetworkClient network;
@@ -286,7 +286,7 @@ void NoteAppTests::workspaceServiceStartsWithDefaultWorkspace()
     QCOMPARE(settings.lastWorkspacePath(), QString());
 }
 
-void NoteAppTests::workspaceServicePersistsLastWorkspacePath()
+void ORangeTests::workspaceServicePersistsLastWorkspacePath()
 {
     storage::FsFileRepository repo;
     network::StubNetworkClient network;
@@ -302,7 +302,7 @@ void NoteAppTests::workspaceServicePersistsLastWorkspacePath()
     QCOMPARE(settings.lastWorkspacePath(), expected.rootPath);
 }
 
-void NoteAppTests::documentManagerTracksSessions()
+void ORangeTests::documentManagerTracksSessions()
 {
     core::DocumentManager manager;
 
@@ -328,7 +328,7 @@ void NoteAppTests::documentManagerTracksSessions()
     QVERIFY(manager.sessions().isEmpty());
 }
 
-void NoteAppTests::appCreatesCoreServices()
+void ORangeTests::appCreatesCoreServices()
 {
     app::App app;
 
@@ -339,7 +339,7 @@ void NoteAppTests::appCreatesCoreServices()
     QVERIFY(!app.canOpenFileInEditor("note.bin"));
 }
 
-void NoteAppTests::mainWindowBuildsExpectedUi()
+void ORangeTests::mainWindowBuildsExpectedUi()
 {
     app::App app;
     ui::MainWindow window(app);
@@ -371,5 +371,5 @@ void NoteAppTests::mainWindowBuildsExpectedUi()
     QVERIFY(window.findChild<QAction*>(ui::actions::kProperties) != nullptr);
 }
 
-QTEST_MAIN(NoteAppTests)
+QTEST_MAIN(ORangeTests)
 #include "test_main.moc"

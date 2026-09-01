@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     a.setWindowIcon(QIcon(":/icons/app.png"));
 
     QCoreApplication::setOrganizationName("O-O");
-    QCoreApplication::setApplicationName("O-Range");
+    QCoreApplication::setApplicationName("O-range");
 
     app::App app;
 

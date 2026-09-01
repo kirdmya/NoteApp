@@ -1,6 +1,6 @@
 find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
 
-add_executable(NoteAppTests
+add_executable(ORangeTests
     test_main.cpp
 
     ../src/app/App.h
@@ -33,7 +33,7 @@ add_executable(NoteAppTests
     ../src/ui/widgets/PlaceholderWidget.cpp
 )
 
-target_include_directories(NoteAppTests PRIVATE ../src)
-target_link_libraries(NoteAppTests PRIVATE Qt6::Widgets Qt6::Test)
+target_include_directories(ORangeTests PRIVATE ../src)
+target_link_libraries(ORangeTests PRIVATE Qt6::Widgets Qt6::Test)
 
-add_test(NAME NoteAppTests COMMAND NoteAppTests)
+add_test(NAME ORangeTests COMMAND ORangeTests)

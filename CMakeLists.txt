@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(NoteApp VERSION 0.3.0 LANGUAGES CXX)
+project(O-range VERSION 0.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,7 +14,7 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 qt_standard_project_setup()
 set(CMAKE_AUTORCC ON)
 
-qt_add_executable(NoteApp
+qt_add_executable(O-range
     src/app/main.cpp
     src/app/App.h
     src/app/App.cpp
@@ -53,13 +53,13 @@ qt_add_executable(NoteApp
     resource/resources.qrc
 )
 
-target_link_libraries(NoteApp PRIVATE Qt6::Widgets)
+target_link_libraries(O-range PRIVATE Qt6::Widgets)
 
 # Чтобы пути include были удобнее
-target_include_directories(NoteApp PRIVATE src)
-option(NOTEAPP_BUILD_TESTS "Build NoteApp tests" ON)
+target_include_directories(O-range PRIVATE src)
+option(ORANGE_BUILD_TESTS "Build O-range tests" ON)
 
-if (NOTEAPP_BUILD_TESTS)
+if (ORANGE_BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
 endif()

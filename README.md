@@ -1,7 +1,7 @@
-# NoteApp
+# O-range
 
 <p align="center">
-  <img src="resource/social-preview.png" alt="NoteApp social preview" width="100%">
+  <img src="resource/social-preview.png" alt="O-range social preview" width="100%">
 </p>
 
 <p align="center">
