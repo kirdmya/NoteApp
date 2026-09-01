@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(NoteApp VERSION 0.2.0 LANGUAGES CXX)
+project(NoteApp VERSION 0.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -30,6 +30,9 @@ qt_add_executable(NoteApp
 
     src/core/domain/Workspace.h
     src/core/domain/NoteId.h
+    src/core/domain/DocumentSession.h
+    src/core/usecases/DocumentManager.h
+    src/core/usecases/DocumentManager.cpp
     src/core/usecases/IWorkspaceService.h
     src/core/usecases/WorkspaceService.h
     src/core/usecases/WorkspaceService.cpp
